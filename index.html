@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>An Acousmatic Network for Neural Audio Synthesis</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                line-height: 1.6;
+                margin: 0;
+                padding: 20px;
+                text-align: center;
+                background-color: #f5f5f5;
+            }
+            h1,
+            h2,
+            h3 {
+                color: #000;
+                margin: 20px 0;
+            }
+            p,
+            table,
+            pre {
+                margin: 20px auto;
+                max-width: 800px;
+                text-align: left;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 20px;
+                font-family: Arial, sans-serif;
+                font-size: 14px;
+            }
+            th,
+            td {
+                border: 1px solid #dddddd;
+                padding: 8px;
+                text-align: left;
+            }
+            th {
+                background-color: #f2f2f2;
+                font-weight: bold;
+            }
+            td {
+                white-space: nowrap;
+            }
+
+            .figure-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .figure-container figure {
+                width: 100%; /* Set your desired width */
+                max-width: 1000px; /* Optional max-width */
+                margin: 0 auto; /* Center the figure */
+                text-align: center;
+            }
+
+            .figure-container img {
+                width: 100%;
+                height: auto; /* Maintain aspect ratio */
+            }
+
+            .figure-container figcaption {
+                margin-top: 10px;
+                font-size: 1em;
+                color: #555;
+            }
+
+            figure {
+                margin: 20px auto;
+                max-width: 800px;
+                text-align: center;
+            }
+            figcaption {
+                margin-top: 10px;
+            }
+            .grid {
+                display: grid;
+                gap: 10px;
+                justify-content: center;
+                margin: 20px auto;
+            }
+            .grid-4x2 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .grid-4x3 {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .grid-3x3 {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .grid-2x3 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            audio {
+                display: block;
+                margin: 0 auto;
+            }
+            code {
+                display: block;
+                background: #e0e0e0;
+                padding: 10px;
+                border: 1px solid #000;
+            }
+        </style>
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+        <script
+            id="MathJax-script"
+            async
+            src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+        ></script>
+    </head>
+    <body>
+        <h1>An Acousmatic Approach to Neural Audio Synthesis</h1>
+        <!-- <p> -->
+        <!--     In recent years, neural audio synthesis has gained much attention in the field -->
+        <!--     of computer music. While various literature exists relating these ideas to -->
+        <!--     improving sound quality and modeling 21st century forms of synthesis, very few -->
+        <!--     work has also attempted to grapple with the philosophy of sound in parallel. -->
+        <!-- </p> -->
+
+        <!-- <p> -->
+        <!--     This page presents some ideas on acousmatic approaches to neural audio -->
+        <!--     synthesis, casually presenting some ideas from the <i>Acousmatic Networks</i>. -->
+        <!-- </p> -->
+
+        <h2>Acousmatic Sound and The Sound Object</h2>
+        <!-- <p> -->
+        <!--     In other words, there is nothing specifically technological about the -->
+        <!--     “objectivity” of the sound object. A sound object could be demonstrated any -->
+        <!--     number of ways within an acousmatic setting—not only using audio technology -->
+        <!--     but also through the listener’s own imagination [Kan14]. It then becomes -->
+        <!--     innevitable that if the listener is barred from all tangeable physical cues -->
+        <!--     that might aid in understanding the sound source, the sound object must reveal -->
+        <!--     itself through its multiplicity of parametric variations, often organized -->
+        <!--     formally by the composer of a piece of acousmatic music. It is about -->
+        <!--     <i>invariance.</i> -->
+        <!-- </p> -->
+
+        <!-- <p> -->
+        <!--     Brian Kane also argues that much of Schaeffer's philosophy of sound was -->
+        <!--     influenced by phenomenologist Edmond Husserl, who often talked about the -->
+        <!--     invariance of objects more generally. This can be argued to relate to a -->
+        <!--     particular influence from the geometric philosophies of The Erlangen Programme -->
+        <!--     represented a departure from thinking about geometry as a field concerned with -->
+        <!--     the structure of physical space towards thinking about geometry as a field -->
+        <!--     concerned with abstract notions of structure, primarily centered around the -->
+        <!--     mathematical notion of groups, group transformations, and group invariance -->
+        <!--     [Tie05] 2 . This reorientation of geometry around the notion of the group -->
+        <!--     enabled geometry to “no longer ... be considered as the theory of the -->
+        <!--     structure of physical space but rather as the science of possible space forms -->
+        <!--     regardless of their being of physical space or of certain of its parts” -->
+        <!--     [Mor91]. Geometry thus came to be the investigation of everything that is -->
+        <!--     invariant under the transformations of the given group, expressed by “the -->
+        <!--     axioms, definitions and theorems that are or could be set up for each -->
+        <!--     particular geometry” [Tie05]. -->
+        <!-- </p> -->
+
+        <h2>Modeling The Sound Object's Morphology</h2>
+        <!-- <p> -->
+        <!--     Much like Schaeffer did with music, many authors treat the field of deep -->
+        <!--     learning in a way that talks about invariance. One notable paper by Higgins et -->
+        <!--     al. (...) uses the language of group representation theory to try to get at a -->
+        <!--     notion of data in the same way the Schaeffer gets at the "sound itself." The -->
+        <!--     hypothesis for Higgins surrounds the notion of geometric group actions that -->
+        <!--     act on a representational subspace. -->
+        <!-- </p> -->
+        <!-- <p> -->
+        <!--     the most desirable neural network architectures for representation learning -->
+        <!--     are ones in which the layers disentangle input representations, since this -->
+        <!--     allows for interpretability. -->
+        <!-- </p> -->
+        <!-- <p>\[ \rho|_{V} = \bigoplus_{l = 1}^{L}\rho|_{W_{l}} \]</p> -->
+        <!-- <p> -->
+        <!--     The most common model for audio synthesis is Differentiable Digital Signal -->
+        <!--     Processing. The way DDSP thinks of a dataset is by finding an equivariant -->
+        <!--     mapping between control parameters to affine representations of the dataset -->
+        <!--     such that affine transformations are preserved. Consider our sound objects as -->
+        <!--     vectors... This is done by first defining an operator \Gamma that extracts -->
+        <!--     independent control parameters from the dataset and associates them with a -->
+        <!--     perceptual domain on the microscale. This is done through MSS. -->
+        <!-- </p> -->
+        <!-- <p> -->
+        <!--     However, in order to perform this, we must define a synthesizer. If we didn't, -->
+        <!--     we'd have to learn the parametric space of the Weyl_Heisenberg group which is -->
+        <!--     not only huge but unstable. -->
+        <!-- </p> -->
+        <!-- <p> -->
+        <!--     Finding these "disentangled" control parameters for a model like DDSP, -->
+        <!--     however, requires some care regarding the musical structure of the sound -->
+        <!--     object. At first glance, we might think to derive these control parameters by -->
+        <!--     taking a set of control parameters. We can consider something like the -->
+        <!--     time-varying audio descriptors from Peeters et al. (...), which consist of a -->
+        <!--     list of spectral audio descriptors whose ... correlate to human perception. -->
+        <!--     (LIST OF AUDIO DESCRIPTORS) -->
+        <!-- </p> -->
+        <!-- <p> -->
+        <!--     We can try to find which parameters are the least correlated in a dataset -->
+        <!--     using a PCA or something. This allows us to derive a notion of approximate -->
+        <!--     orthogonality, since the least correlated control parameters will -->
+        <!--     approximately form the most disentangled subspaces for control. -->
+        <!-- </p> -->
+        <!-- <p> -->
+        <!--     But while this might seem like a proper approach, it disregards important -->
+        <!--     notions of musical structure. This notion of correlation accounts for -->
+        <!--     expressivity on the microscale. However, sound is not just something that we -->
+        <!--     perceive on a microscale, we also understand notions of timbre distributions -->
+        <!--     on the <i>mesoscale</i>. We can interpret this group theoretically, showing -->
+        <!--     that our model might construct an equivariant relationship between control -->
+        <!--     parameters and sounds, but at this scale of control it might not be invariant -->
+        <!--     larger timbral structures. To put in Schaefferian terms, the timbral model -->
+        <!--     might yield an expressive <i>morphology</i> of sound, but it disregards a -->
+        <!--     proper <i>typology</i> of sound objects in the dataset. -->
+        <!-- </p> -->
+
+        <h2>Modeling The Sound Object's Typology</h2>
+        <!-- <p> -->
+        <!--     This is where the scattering network comes in. Lostanlen ... shows in many -->
+        <!--     papers that scattering representations capture timbral similarities in complex -->
+        <!--     sounds such as orchestral extended techniques. When reduced in dimensionality -->
+        <!--     via an algorithm such as isomap, it can also be used to estimate the parameric -->
+        <!--     span of FM, AM, and harmonic synthesizers. This capability ensures a bridge -->
+        <!--     between typology and morphology, namely that "microstructural" control -->
+        <!--     parameters follow the distribution of "mesostructural" representations. -->
+        <!--     Considering our dataset of sound objects, we might consider that plotting our -->
+        <!--     dataset in a similar isomap would yield a representation in 3D space that -->
+        <!--     follows an unknown distribution of microstructural parameters. -->
+        <!-- </p> -->
+        <!-- <p> -->
+        <!--     Therefore, a suitable question might not be which control parameters account -->
+        <!--     for the least amount of correlation in the dataset, but rather which control -->
+        <!--     parameters are <i>most correlated</i> with the dimensions of the JTFS isomap. -->
+        <!--     Our experiment thus attempts to select the most disentangled control paramters -->
+        <!--     based on which of our spectral audio descriptors are most correlated with with -->
+        <!--     the isomap. -->
+        <!-- </p> -->
+
+        <h2>Experiments</h2>
+        <!-- <p> -->
+        <!--     With the motivation of exploring a more "acousmatic" situation for the neural -->
+        <!--     audio model, we chose to run a number of experiments with three different -->
+        <!--     audio datasets of friction percussion techniuqes, an extended technique that -->
+        <!--     utilizes the scraping of nontraditional objects on a given drum head. We -->
+        <!--     collected 20 - 30 recordings between 200ms and 1s of three different objects -->
+        <!--     played on the membrane of a floor tom. These consisted of a spring coil (A), a -->
+        <!--     threaded rod (B), and a small piece of styrofoam (C). -->
+        <!-- </p> -->
+
+        <h3>Acousmatic Control Parameters</h3>
+        <!-- <p> -->
+        <!--     Our first experiment involved training individual DDSP models on these -->
+        <!--     datasets. The goal of this experiment was to explore ways in which -->
+        <!--     disentangled control parameters can be extracted from "sound objects" in the -->
+        <!--     dataset, and not from prior knowledge of sound in the dataset. The expected -->
+        <!--     output of such a modification would result after training a DDSP model on the -->
+        <!--     data, where the linear group actions of the control space would yield a more -->
+        <!--     expressive output. -->
+        <!-- </p> -->
+
+        <!-- <p> -->
+        <!--     We perform this experiment and train on the resulting control parameters for -->
+        <!--     each dataset, comparing with the baseline control parameters of the given DDSP -->
+        <!--     model. -->
+        <!-- </p> -->
+
+        <h3>Acousmatic Dataset Construction</h3>
+        <!-- <p> -->
+        <!--     An additional experiment further augments the Schaefferian circumstances of a -->
+        <!--     DDSP model. In this experiment, we construct an aggregate dataset by taking -->
+        <!--     the union of all three friction percussion datasets and performing the same -->
+        <!--     experiment as above. This experiment applies a stricter condition of -->
+        <!--     "acousmatic" since the notion of sound source is further abstracted. -->
+        <!--     Evaluations for this condition are purely compositional, and consist of a -->
+        <!--     number of timbre transfer examples. -->
+        <!-- </p> -->
+
+        <h3>Independent Models</h3>
+        <!-- <p>Below are three models we recorded at CIRMMT.</p> -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Sound Example</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <audio controls>
+                            <source src="tt-input/b-tt.mp3" type="audio/mpeg" />
+                        </audio>
+                    </td>
+                    <td><b>Class A: </b>Tom with spring coil</td>
+                </tr>
+                <tr>
+                    <td>
+                        <audio controls>
+                            <source src="tt-input/d-tt.mp3" type="audio/mpeg" />
+                        </audio>
+                    </td>
+                    <td><b>Class B: </b>Tom played with threaded rod</td>
+                </tr>
+                <tr>
+                    <td>
+                        <audio controls>
+                            <source src="tt-input/e-tt.mp3" type="audio/mpeg" />
+                        </audio>
+                    </td>
+                    <td><b>Class C:</b>Tom played with miniature styrofoam</td>
+                </tr>
+            </tbody>
+        </table>
+
+        Spectral audio descriptors for each sound class most correlated to each dimension
+        of the JTFS isomap
+
+        <div class="figure-container">
+            <figure>
+                <h3>
+                    <figcaption><i>Class A</i></figcaption>
+                </h3>
+                <img src="b-plots/initial-plots.png" alt="Figure 1" />
+            </figure>
+            <table>
+                <thead>
+                    <tr>
+                        <th>JTFS Isomap Dimension</th>
+                        <th>1st Most Correlated Feature</th>
+                        <th>2nd Most Correlated Feature</th>
+                        <th>3rd Most Correlated Feature</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>X</td>
+                        <td>Slope</td>
+                        <td>Centroid</td>
+                        <td>Harmonic Spectral Deviation</td>
+                    </tr>
+                    <tr>
+                        <td>Y</td>
+                        <td>Inharmonicity</td>
+                        <td>Harmonic Energy</td>
+                        <td>Noisiness</td>
+                    </tr>
+                    <tr>
+                        <td>Z</td>
+                        <td>Noise Energy</td>
+                        <td>Harmonic Energy</td>
+                        <td>Crest</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Principal Component</th>
+                        <th>Explained Variance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Centroid</td>
+                        <td>0.517</td>
+                    </tr>
+                    <tr>
+                        <td>Slope</td>
+                        <td>0.327</td>
+                    </tr>
+                    <tr>
+                        <td>Crest</td>
+                        <td>0.074</td>
+                    </tr>
+                    <tr>
+                        <td>Harmonic Energy</td>
+                        <td>0.037</td>
+                    </tr>
+                    <tr>
+                        <td>Noise Energy</td>
+                        <td>0.035</td>
+                    </tr>
+                    <tr>
+                        <td>Noisiness</td>
+                        <td>0.006</td>
+                    </tr>
+                    <tr>
+                        <td>Inharmonicity</td>
+                        <td>0.001</td>
+                    </tr>
+                    <tr>
+                        <td>Harmonic Spectral Deviation</td>
+                        <td>1.730e-15</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <br />
+            <figure>
+                <h3>
+                    <figcaption><i>Class B</i></figcaption>
+                </h3>
+                <img src="d-plots/initial-plots.png" alt="Figure 2" />
+            </figure>
+            <table>
+                <thead>
+                    <tr>
+                        <th>JTFS Isomap Dimension</th>
+                        <th>1st Most Correlated Feature</th>
+                        <th>2nd Most Correlated Feature</th>
+                        <th>3rd Most Correlated Feature</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>X</td>
+                        <td>Decrease</td>
+                        <td>Crest</td>
+                        <td>Noisiness</td>
+                    </tr>
+                    <tr>
+                        <td>Y</td>
+                        <td>Slope</td>
+                        <td>Centroid</td>
+                        <td>Flatness</td>
+                    </tr>
+                    <tr>
+                        <td>Z</td>
+                        <td>Inharmonicity</td>
+                        <td>Odd/Even Ratio</td>
+                        <td>Centroid</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Principal Component</th>
+                        <th>Explained Variance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Centroid</td>
+                        <td>0.506</td>
+                    </tr>
+                    <tr>
+                        <td>Slope</td>
+                        <td>0.175</td>
+                    </tr>
+                    <tr>
+                        <td>Decrease</td>
+                        <td>0.130</td>
+                    </tr>
+                    <tr>
+                        <td>Flatness</td>
+                        <td>0.114</td>
+                    </tr>
+                    <tr>
+                        <td>Crest</td>
+                        <td>0.056</td>
+                    </tr>
+                    <tr>
+                        <td>Noisiness</td>
+                        <td>0.011</td>
+                    </tr>
+                    <tr>
+                        <td>Odd/Even Ratio</td>
+                        <td>1.186e-15</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <br />
+            <figure>
+                <h3>
+                    <figcaption><i>Class C</i></figcaption>
+                </h3>
+                <img src="e-plots/initial-plots.png" alt="Figure 3" />
+            </figure>
+            <table>
+                <thead>
+                    <tr>
+                        <th>JTFS Isomap Dimension</th>
+                        <th>1st Most Correlated Feature</th>
+                        <th>2nd Most Correlated Feature</th>
+                        <th>3rd Most Correlated Feature</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>X</td>
+                        <td>Harmonic/Spectral Deviation</td>
+                        <td>Inharmonicity</td>
+                        <td>Decrease</td>
+                    </tr>
+                    <tr>
+                        <td>Y</td>
+                        <td>Flatness</td>
+                        <td>Noise Energy</td>
+                        <td>Slope</td>
+                    </tr>
+                    <tr>
+                        <td>Z</td>
+                        <td>Noisiness</td>
+                        <td>Harmonic Energy</td>
+                        <td>Crest</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Principal Component</th>
+                        <th>Explained Variance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Slope</td>
+                        <td>0.526</td>
+                    </tr>
+                    <tr>
+                        <td>Decrease</td>
+                        <td>0.264</td>
+                    </tr>
+                    <tr>
+                        <td>Flatness</td>
+                        <td>0.089</td>
+                    </tr>
+                    <tr>
+                        <td>Crest</td>
+                        <td>0.067</td>
+                    </tr>
+                    <tr>
+                        <td>Harmonic Energy</td>
+                        <td>0.021</td>
+                    </tr>
+                    <tr>
+                        <td>Noise Energy</td>
+                        <td>0.017</td>
+                    </tr>
+                    <tr>
+                        <td>Noisiness</td>
+                        <td>0.007</td>
+                    </tr>
+                    <tr>
+                        <td>Inharmonicity</td>
+                        <td>0.004</td>
+                    </tr>
+                    <tr>
+                        <td>Harmonic Spectral Deviation</td>
+                        <td>0.001</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>"Acousmatic" Model</h3>
+        <!-- <p>Interestingly, the centroid became included in the JTFS space on the X axis</p> -->
+        <div class="figure-container">
+            <figure>
+                <h3>
+                    <figcaption><i>Acousmatic model distribution</i></figcaption>
+                    <img src="aggregate-plots/aggregate_initial.png" alt="Figure 3" />
+                </h3>
+            </figure>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>JTFS Isomap Dimension</th>
+                    <th>1st Most Correlated Feature</th>
+                    <th>2nd Most Correlated Feature</th>
+                    <th>3rd Most Correlated Feature</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>X</td>
+                    <td>Centroid</td>
+                    <td>Slope</td>
+                    <td>Crest</td>
+                </tr>
+                <tr>
+                    <td>Y</td>
+                    <td>Harmonic Spectral Deviation</td>
+                    <td>Flatness</td>
+                    <td>Slope</td>
+                </tr>
+                <tr>
+                    <td>Z</td>
+                    <td>Inharmonicity</td>
+                    <td>Harmonic Spectral Deviation</td>
+                    <td>Noisiness</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Principal Component</th>
+                    <th>Explained Variance</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Centroid</td>
+                    <td>0.654</td>
+                </tr>
+                <tr>
+                    <td>Slope</td>
+                    <td>0.223</td>
+                </tr>
+                <tr>
+                    <td>Flatness</td>
+                    <td>0.068</td>
+                </tr>
+                <tr>
+                    <td>Crest</td>
+                    <td>0.036</td>
+                </tr>
+                <tr>
+                    <td>Noisiness</td>
+                    <td>0.009</td>
+                </tr>
+                <tr>
+                    <td>Inharmonicity</td>
+                    <td>0.007</td>
+                </tr>
+                <tr>
+                    <td>Harmonic Spectral Deviation</td>
+                    <td>6.504e-15</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Results</h2>
+
+        <h3>Extrapolation</h3>
+        <div class="figure-container">
+            <figure>
+                <img src="b-plots/manifold-plots-pearson.png" alt="Figure 7" />
+                <!-- <figcaption>Figure 7 caption</figcaption> -->
+            </figure>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Model</th>
+                        <th>Total L1 Distance Between Sound Objects</th>
+                        <th>Total L2 Distance Between Sound Objects</th>
+                        <th>Convex Hull Volume</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Baseline</td>
+                        <td>0.4413</td>
+                        <td>0.3286</td>
+                        <td>0.0463</td>
+                    </tr>
+                    <tr>
+                        <td>"Acousmatic"</td>
+                        <td><b>0.2525</b></td>
+                        <td><b>0.1991</b></td>
+                        <td><b>0.0341</b></td>
+                    </tr>
+                </tbody>
+            </table>
+            <figure>
+                <img src="d-plots/manifold-plots-pearson.png" alt="Figure 8" />
+                <!-- <figcaption>Figure 8 caption</figcaption> -->
+            </figure>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Model</th>
+                        <th>Total L1 Distance between Sound Objects</th>
+                        <th>Total L2 Distance between Sound Objects</th>
+                        <th>Convex Hull Volume</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Baseline</td>
+                        <td>0.3134</td>
+                        <td>0.2568</td>
+                        <td>0.0167</td>
+                    </tr>
+                    <tr>
+                        <td>"Acousmatic"</td>
+                        <td>0.1245</td>
+                        <td>0.0900</td>
+                        <td>0.0162</td>
+                    </tr>
+                </tbody>
+            </table>
+            <figure>
+                <img src="e-plots/manifold-plots-pearson.png" alt="Figure 8" />
+                <!-- <figcaption>Figure 8 caption</figcaption> -->
+            </figure>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Model</th>
+                    <th>Total L1 Distance between Sound Objects</th>
+                    <th>Total L2 Distance between Sound Objects</th>
+                    <th>Convex Hull Volume</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Baseline</td>
+                    <td>0.4937</td>
+                    <td>0.3541</td>
+                    <td><b>0.0675</b></td>
+                </tr>
+                <tr>
+                    <td>"Acousmatic"</td>
+                    <td><b>0.4479</b></td>
+                    <td><b>0.3170</b></td>
+                    <td>0.0786</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="grid grid-4x3">
+            <figure>
+                <img
+                    src="b-plots/manifold-plots-baseline.png"
+                    alt="Figure 9"
+                    style="width: 60%"
+                />
+                <!-- <figcaption>Figure 9 caption</figcaption> -->
+            </figure>
+            <figure>
+                <img
+                    src="d-plots/manifold-plots-baseline.png"
+                    alt="Figure 10"
+                    style="width: 60%"
+                />
+                <!-- <figcaption>Figure 10 caption</figcaption> -->
+            </figure>
+            <figure>
+                <img
+                    src="e-plots/manifold-plots-baseline.png"
+                    alt="Figure 10"
+                    style="width: 60%"
+                />
+                <!-- <figcaption>Figure 10 caption</figcaption> -->
+            </figure>
+            <!-- Add more figures as needed -->
+        </div>
+
+        <h3>Reconstructions</h3>
+
+        <div class="grid grid-3x3">
+            <div>
+                Class A Original
+                <audio controls>
+                    <source src="tt-input/b-original.mp3" type="audio/mpeg" />
+                </audio>
+            </div>
+            <div>
+                Baseline Reconstruction
+                <audio controls>
+                    <source src="tt-output/b-baseline-output.mp3" type="audio/mpeg" />
+                </audio>
+            </div>
+            <div>
+                Acousmatic Reconstruction
+                <audio controls>
+                    <source src="tt-output/b-output.mp3" type="audio/mpeg" />
+                </audio>
+            </div>
+        </div>
+        <div class="grid grid-3x3">
+            <div>
+                Class B Original
+                <audio controls>
+                    <source src="tt-input/d-original.mp3" type="audio/mpeg" />
+                </audio>
+            </div>
+            <div>
+                Baseline Reconstruction
+                <audio controls>
+                    <source src="tt-output/d-baseline-output.mp3" type="audio/mpeg" />
+                </audio>
+            </div>
+            <div>
+                Acousmatic Reconstruction
+                <audio controls>
+                    <source src="tt-output/d-output.mp3" type="audio/mpeg" />
+                </audio>
+            </div>
+        </div>
+
+        <div class="grid grid-3x3">
+            <div>
+                Class C Original
+                <audio controls>
+                    <source src="tt-input/e-original.mp3" type="audio/mpeg" />
+                </audio>
+            </div>
+            <div>
+                Baseline Reconstruction
+                <audio controls>
+                    <source src="tt-output/e-baseline-output.mp3" type="audio/mpeg" />
+                </audio>
+            </div>
+            <div>
+                Acousmatic Reconstruction
+                <audio controls>
+                    <source src="tt-output/e-output.mp3" type="audio/mpeg" />
+                </audio>
+            </div>
+        </div>
+
+        <h3>Acousmatic Timbre Transfer</h3>
+
+        <div class="grid grid-2x3">
+            <div>
+                Violin Improvisation (Original)
+                <audio controls>
+                    <source src="tt-input/josh-input.mp3" type="audio/mpeg" />
+                </audio>
+                Violin Improvisation (Timbre Transfer)
+                <audio controls>
+                    <source src="tt-output/josh-output.mp3" type="audio/mpeg" />
+                </audio>
+            </div>
+            <div>
+                Skipping Rocks (Original)
+                <audio controls>
+                    <source src="tt-input/rocks-input.mp3" type="audio/mpeg" />
+                </audio>
+                Skipping Rocks (Timbre Transfer)
+                <audio controls>
+                    <source src="tt-output/rocks-output.mp3" type="audio/mpeg" />
+                </audio>
+            </div>
+        </div>
+        <h2>Acknowledgements</h2>
+        <pre>
+        <code>
+        @article{yourcitation,
+            author = {Author Name},
+            title = {Title of the Work},
+            journal = {Journal Name},
+            year = {Year},
+        }
+        </code>
+    </pre>
+
+        <h2>Citations</h2>
+        <p>(IEEE citations)</p>
+    </body>
+</html>
