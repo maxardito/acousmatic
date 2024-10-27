@@ -1,1431 +1,1421 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>An Acousmatic Network for Neural Audio Synthesis</title>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        line-height: 1.6;
-        margin: 0;
-        padding: 20px;
-        text-align: center;
-        background-color: #ffffff;
-      }
-      h1,
-      h2,
-      h3 {
-        color: #000;
-        margin: 20px 0;
-      }
-      p,
-      table,
-      pre {
-        margin: 20px auto;
-        max-width: 800px;
-        text-align: left;
-      }
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-bottom: 20px;
-        font-family: Arial, sans-serif;
-        font-size: 14px;
-      }
-      th,
-      td {
-        border: 1px solid #dddddd;
-        padding: 8px;
-        text-align: left;
-      }
-      th {
-        background-color: #f2f2f2;
-        font-weight: bold;
-      }
-      td {
-        white-space: nowrap;
-      }
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>An Acousmatic Network for Neural Audio Synthesis</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                line-height: 1.6;
+                margin: 0;
+                padding: 20px;
+                text-align: center;
+                background-color: #ffffff;
+            }
+            h1,
+            h2,
+            h3 {
+                color: #000;
+                margin: 20px 0;
+            }
+            p,
+            table,
+            pre {
+                margin: 20px auto;
+                max-width: 800px;
+                text-align: left;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 20px;
+                font-family: Arial, sans-serif;
+                font-size: 14px;
+            }
+            th,
+            td {
+                border: 1px solid #dddddd;
+                padding: 8px;
+                text-align: left;
+            }
+            th {
+                background-color: #f2f2f2;
+                font-weight: bold;
+            }
+            td {
+                white-space: nowrap;
+            }
 
-      .figure-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      }
+            .figure-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
 
-      .figure-container figure {
-        width: 100%; /* Set your desired width */
-        max-width: 1000px; /* Optional max-width */
-        margin: 0 auto; /* Center the figure */
-        text-align: center;
-      }
+            .figure-container figure {
+                width: 100%; /* Set your desired width */
+                max-width: 1000px; /* Optional max-width */
+                margin: 0 auto; /* Center the figure */
+                text-align: center;
+            }
 
-      .figure-container img {
-        width: 100%;
-        height: auto; /* Maintain aspect ratio */
-      }
+            .figure-container img {
+                width: 100%;
+                height: auto; /* Maintain aspect ratio */
+            }
 
-      .figure-container figcaption {
-        margin-top: 10px;
-        font-size: 1em;
-        color: #555;
-      }
+            .figure-container figcaption {
+                margin-top: 10px;
+                font-size: 1em;
+                color: #555;
+            }
 
-      figure {
-        margin: 20px auto;
-        max-width: 800px;
-        text-align: center;
-      }
-      figcaption {
-        margin-top: 10px;
-      }
-      .grid {
-        display: grid;
-        gap: 10px;
-        justify-content: center;
-        margin: 20px auto;
-      }
-      .grid-4x2 {
-        grid-template-columns: repeat(2, 1fr);
-      }
-      .grid-4x3 {
-        grid-template-columns: repeat(3, 1fr);
-      }
-      .grid-3x3 {
-        grid-template-columns: repeat(3, 1fr);
-      }
-      .grid-2x3 {
-        grid-template-columns: repeat(2, 1fr);
-      }
-      audio {
-        display: block;
-        margin: 0 auto;
-      }
-      code {
-        display: block;
-        background: #e0e0e0;
-        padding: 10px;
-        border: 1px solid #000;
-      }
-    </style>
-    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-    <script
-      id="MathJax-script"
-      async
-      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
-    ></script>
-  </head>
-  <body>
-    <h1>An Acousmatic Approach to Neural Audio Synthesis</h1>
-    <h4>
-      <i
-        >Companion site to the thesis
-        <a href="">An Acousmatic Approach to Neural Audio Synthesis</a> (Ardito,
-        2024)</i
-      >
-    </h4>
-    <!-- <div style="text-align: center"> -->
-    <!--     <figure> -->
-    <!--         <img -->
-    <!--             src="top-group.png" -->
-    <!--             alt="Topological mapping diagram" -->
-    <!--             style="width: 60%" -->
-    <!--         /> -->
-    <!--         <figcaption> -->
-    <!--             <i -->
-    <!--                 >A topological interpretation of the DDSP harmonic autoencoder -->
-    <!--                 from [EHGR20]</i -->
-    <!--             > -->
-    <!--         </figcaption> -->
-    <!--     </figure> -->
-    <!-- </div> -->
-    <!-- <h2>Introduction</h2> -->
-    <!-- <p> -->
-    <!--     It can be argued that many contemporary advancements in audio signal -->
-    <!--     processing also correlate with radical shifts in compositional form, in which -->
-    <!--     unprecedented musical practices reveal themselves through technological -->
-    <!--     experimentation. One primary example of this phenomenon can be found in the -->
-    <!--     philosophy of acousmatic music—a form of electronic music composition that -->
-    <!--     emerged in mid-20th century France, where sound is experienced without a -->
-    <!--     visible source through spatialized loudspeakers, recorded sound manipulation, -->
-    <!--     and analog sound synthesis. The practice of acousmatic music evolved alongside -->
-    <!--     advancements in engineering and signal theory, allowing composers to explore -->
-    <!--     new ways of presenting sound. Collaborations between engineers and composers, -->
-    <!--     especially at institutions like the Groupe de Recherches Musicales (GRM), led -->
-    <!--     to radical reformulations of both compositional techniques and philosophical -->
-    <!--     ideas about sound. Many of these reformalizations can be found in the writings -->
-    <!--     of the GRM's first director Pierre Schaeffer, particularly in his -->
-    <!--     <i>Traité des objets musicaux</i> [Sch]. Schaeffer argued that these emerging -->
-    <!--     audio technologies warranted an entirely new taxonomy for analyzing sound -->
-    <!--     compositionally. This came to be known as <i>typomorphology</i>, a sort of -->
-    <!--     music theory for the analysis of the "typology" and "morphology" of what -->
-    <!--     Schaeffer’s denoted the "sound object"—an invariant, theoretical unit of -->
-    <!--     sound. -->
-    <!-- </p> -->
-    <!-- <p> -->
-    <!--     It is seldom pointed out how easily the acousmatic philosophy of sound can be -->
-    <!--     placed in dialogue with similar developments in 21st-century audio signal -->
-    <!--     processing, namely the development of data-driven audio generation and -->
-    <!--     classification models. These models, commonly known as -->
-    <!--     <i>neural audio models</i>, utilize deep neural networks (DNNs) as universal -->
-    <!--     function approximators for generation and classification tasks. To demonstrate -->
-    <!--     this, we can start by easily posing the argument that both acousmatic music -->
-    <!--     and neural audio synthesis operate in a "black box" environment where the -->
-    <!--     source of sound is hidden. Continuing this comparison then requires a deeper -->
-    <!--     dive into the epistemological roots of Schaeffer's philosophy and mathematical -->
-    <!--     foundations of deep learning, yet nevertheless leads to the conclusion that -->
-    <!--     both of these forms attempt to can be linked to geometric and mathematical -->
-    <!--     theories of invariance. This thesis thus draws a connection between acousmatic -->
-    <!--     music and modern machine learning by way of concepts such as geometric -->
-    <!--     stability and group theory. We demonstrate this through [Kan14]'s argument -->
-    <!--     that Schaefferian philosophy was primarily influenced by Husserlian -->
-    <!--     phenomenology, and through [BBCV21]'s foundational work on geometric -->
-    <!--     approaches to deep learning. -->
-    <!-- </p> -->
-    <!-- <p> -->
-    <!--     Based on these texts, we can formalize this epistemic connection by modeling -->
-    <!--     the Schaefferian sound object mathematically as a continuous manifold with Lie -->
-    <!--     group structure. Using geometric approaches to deep learning, we can then -->
-    <!--     review how something like the wavelet scattering interpretation of the -->
-    <!--     Convolutional Neural Networks (CNNs) [Mal16] [AM14] can geometrically -->
-    <!--     represent the sound object’s mesostructures [VML23]. We can then hypothesize -->
-    <!--     how other neural audio models like Differentiable Digital Signal Processing -->
-    <!--     (DDSP) models [EHGR20] [BRC24] can capture the microstructural properties of -->
-    <!--     sound while preserving invariant parametric transformations. Through a series -->
-    <!--     of experiments with synthetic and friction-based percussion sounds, we -->
-    <!--     demonstrate a novel method for analyzing and synthesizing acousmatic sound -->
-    <!--     objects. This method leverages neural audio models to disentangle key -->
-    <!--     perceptual parameters unique to the dataset without compromising the -->
-    <!--     structural integrity of the sound at different time-scales. The results -->
-    <!--     highlight the potential for using time-varying spectral audio descriptors to -->
-    <!--     control DDSP models, marking a new approach to parametric neural audio -->
-    <!--     synthesis. -->
-    <!-- </p> -->
+            figure {
+                margin: 20px auto;
+                max-width: 800px;
+                text-align: center;
+            }
+            figcaption {
+                margin-top: 10px;
+            }
+            .grid {
+                display: grid;
+                gap: 10px;
+                justify-content: center;
+                margin: 20px auto;
+            }
+            .grid-4x2 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .grid-4x3 {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .grid-3x3 {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .grid-2x3 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            audio {
+                display: block;
+                margin: 0 auto;
+            }
+            code {
+                display: block;
+                background: #e0e0e0;
+                padding: 10px;
+                border: 1px solid #000;
+            }
+        </style>
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+        <script
+            id="MathJax-script"
+            async
+            src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+        ></script>
+    </head>
+    <body>
+        <h1>An Acousmatic Approach to Neural Audio Synthesis</h1>
+        <h4>
+            <i
+                >Companion site to the thesis
+                <a href="">An Acousmatic Approach to Neural Audio Synthesis</a> (Ardito,
+                2024)</i
+            >
+        </h4>
+        <!-- <div style="text-align: center"> -->
+        <!--     <figure> -->
+        <!--         <img -->
+        <!--             src="top-group.png" -->
+        <!--             alt="Topological mapping diagram" -->
+        <!--             style="width: 60%" -->
+        <!--         /> -->
+        <!--         <figcaption> -->
+        <!--             <i -->
+        <!--                 >A topological interpretation of the DDSP harmonic autoencoder -->
+        <!--                 from [EHGR20]</i -->
+        <!--             > -->
+        <!--         </figcaption> -->
+        <!--     </figure> -->
+        <!-- </div> -->
+        <!-- <h2>Introduction</h2> -->
+        <!-- <p> -->
+        <!--     It can be argued that many contemporary advancements in audio signal -->
+        <!--     processing also correlate with radical shifts in compositional form, in which -->
+        <!--     unprecedented musical practices reveal themselves through technological -->
+        <!--     experimentation. One primary example of this phenomenon can be found in the -->
+        <!--     philosophy of acousmatic music—a form of electronic music composition that -->
+        <!--     emerged in mid-20th century France, where sound is experienced without a -->
+        <!--     visible source through spatialized loudspeakers, recorded sound manipulation, -->
+        <!--     and analog sound synthesis. The practice of acousmatic music evolved alongside -->
+        <!--     advancements in engineering and signal theory, allowing composers to explore -->
+        <!--     new ways of presenting sound. Collaborations between engineers and composers, -->
+        <!--     especially at institutions like the Groupe de Recherches Musicales (GRM), led -->
+        <!--     to radical reformulations of both compositional techniques and philosophical -->
+        <!--     ideas about sound. Many of these reformalizations can be found in the writings -->
+        <!--     of the GRM's first director Pierre Schaeffer, particularly in his -->
+        <!--     <i>Traité des objets musicaux</i> [Sch]. Schaeffer argued that these emerging -->
+        <!--     audio technologies warranted an entirely new taxonomy for analyzing sound -->
+        <!--     compositionally. This came to be known as <i>typomorphology</i>, a sort of -->
+        <!--     music theory for the analysis of the "typology" and "morphology" of what -->
+        <!--     Schaeffer’s denoted the "sound object"—an invariant, theoretical unit of -->
+        <!--     sound. -->
+        <!-- </p> -->
+        <!-- <p> -->
+        <!--     It is seldom pointed out how easily the acousmatic philosophy of sound can be -->
+        <!--     placed in dialogue with similar developments in 21st-century audio signal -->
+        <!--     processing, namely the development of data-driven audio generation and -->
+        <!--     classification models. These models, commonly known as -->
+        <!--     <i>neural audio models</i>, utilize deep neural networks (DNNs) as universal -->
+        <!--     function approximators for generation and classification tasks. To demonstrate -->
+        <!--     this, we can start by easily posing the argument that both acousmatic music -->
+        <!--     and neural audio synthesis operate in a "black box" environment where the -->
+        <!--     source of sound is hidden. Continuing this comparison then requires a deeper -->
+        <!--     dive into the epistemological roots of Schaeffer's philosophy and mathematical -->
+        <!--     foundations of deep learning, yet nevertheless leads to the conclusion that -->
+        <!--     both of these forms attempt to can be linked to geometric and mathematical -->
+        <!--     theories of invariance. This thesis thus draws a connection between acousmatic -->
+        <!--     music and modern machine learning by way of concepts such as geometric -->
+        <!--     stability and group theory. We demonstrate this through [Kan14]'s argument -->
+        <!--     that Schaefferian philosophy was primarily influenced by Husserlian -->
+        <!--     phenomenology, and through [BBCV21]'s foundational work on geometric -->
+        <!--     approaches to deep learning. -->
+        <!-- </p> -->
+        <!-- <p> -->
+        <!--     Based on these texts, we can formalize this epistemic connection by modeling -->
+        <!--     the Schaefferian sound object mathematically as a continuous manifold with Lie -->
+        <!--     group structure. Using geometric approaches to deep learning, we can then -->
+        <!--     review how something like the wavelet scattering interpretation of the -->
+        <!--     Convolutional Neural Networks (CNNs) [Mal16] [AM14] can geometrically -->
+        <!--     represent the sound object’s mesostructures [VML23]. We can then hypothesize -->
+        <!--     how other neural audio models like Differentiable Digital Signal Processing -->
+        <!--     (DDSP) models [EHGR20] [BRC24] can capture the microstructural properties of -->
+        <!--     sound while preserving invariant parametric transformations. Through a series -->
+        <!--     of experiments with synthetic and friction-based percussion sounds, we -->
+        <!--     demonstrate a novel method for analyzing and synthesizing acousmatic sound -->
+        <!--     objects. This method leverages neural audio models to disentangle key -->
+        <!--     perceptual parameters unique to the dataset without compromising the -->
+        <!--     structural integrity of the sound at different time-scales. The results -->
+        <!--     highlight the potential for using time-varying spectral audio descriptors to -->
+        <!--     control DDSP models, marking a new approach to parametric neural audio -->
+        <!--     synthesis. -->
+        <!-- </p> -->
 
-    <!-- <h2>Modeling Typomorphology using Group Representations</h2> -->
+        <!-- <h2>Modeling Typomorphology using Group Representations</h2> -->
 
-    <!-- <p> -->
-    <!--     In his book <i>Sound Unseen</i>, music theorist Brian Kane points out a number -->
-    <!--     of similarities between Schaeffer's philosophy of sound and Husserlian -->
-    <!--     phenomenology [Kan14]. While this is indeed a striking comparison in itself, -->
-    <!--     it also warrants an investigation of Schaeffer's writings by proxy of -->
-    <!--     Husserl's mathematical influences. For instance, Husserl’s method of examining -->
-    <!--     the essence of objects by identifying their imagined invariant properties not -->
-    <!--     only reflects Schaeffer's writings about the invariance of the sound object, -->
-    <!--     but also reflects an important influence from contemporaneous shifts in -->
-    <!--     mathematical thinking, particularly in the realm of geometric group theory. -->
-    <!--     His use of the term invariance was not accidental, but rooted in his decision -->
-    <!--     to align his formal ontology with mathematics. Influenced by Hilbert's -->
-    <!--     axiomatization of Euclidean geometry, Cantor's set theory, and most notably -->
-    <!--     Felix Klein’s Erlangen Programme, Husserl drew from the reorientation of -->
-    <!--     geometry as the study of abstract structures, centered around the mathematical -->
-    <!--     <i>group</i>. This shift, from viewing geometry as the study of physical space -->
-    <!--     to understanding it as the science of possible forms, allowed for a move to -->
-    <!--     the study of invariant structures under transformations. Figures like Cayley, -->
-    <!--     Sylvester, Grassmann, Riemann, and others, whose work on algebraic invariants -->
-    <!--     and geometric transformations laid the groundwork for this shift, also -->
-    <!--     profoundly impacted Husserl’s own development of phenomenological invariance. -->
-    <!--     According to [Rou23], Husserl was particularly influenced by two aspects of -->
-    <!--     these geometric ideas: the epistemic transition from experienced to geometric -->
-    <!--     shapes, and the understanding of geometric concepts through interaction with -->
-    <!--     the physical world and imaginative variation. We can see this quite clearly in -->
-    <!--     Schaeffer's approach to the invariance of the sound object, which can be seen -->
-    <!--     as the sonic analogue to Klein's and Husserl’s explorations of invariant -->
-    <!--     geometry, each methodology sharing a common historical and philosophical -->
-    <!--     context. -->
-    <!-- </p> -->
-    <!-- <p> -->
-    <!--     Based on this connection, an argument could be made for the mathematical -->
-    <!--     language of the Erlangen Programme to be integrated into the Schaefferian -->
-    <!--     project—a reinterpretation of typomorphology with respect to the language of -->
-    <!--     group representation theory. In audio signal processing, we often model sound -->
-    <!--     as a rather opaque vector, for instance a continuous temporal representation -->
-    <!--     \(x \in \mathbb{R}\) or a Fourier representation \(x \in \mathbb{C}\) which -->
-    <!--     doesn't reveal much about the underlying geometric structure of the sound -->
-    <!--     we're attempting to model. Instead, we might talk about a sound \(x\) as -->
-    <!--     existing in a space endowed with the underlying symmetric structure of an -->
-    <!--     unknown group \(\mathfrak{G}\). We then make one more important assumption -->
-    <!--     about the space: the assumption that this group is a Lie group (a -->
-    <!--     differentiable manifold) which we denote with a subscript \(\tau\). By then -->
-    <!--     providing a group representation \(\mathcal{X}\) on the space, we can do -->
-    <!--     things like define the existence of a Haar measure and a norm. We can even -->
-    <!--     call it a Hilbert space by defining a map from the group representation to a -->
-    <!--     more common \(L^{2}\) space. -->
-    <!-- </p> -->
-    <!-- <center> -->
-    <!--     \(\mathcal{X}(\mathfrak{G}_{\tau}) = \lbrace{x : \mathfrak{G}_{\tau} -->
-    <!--     \rightarrow L^{2}(\mathfrak{G}_{\tau})\rbrace}\) -->
-    <!-- </center> -->
-    <!-- <p> -->
-    <!--     In this context, a number of canonical paradigms for sound fit in quite -->
-    <!--     naturally. For instance, \(\mathcal{X}\) can be thought of as a time-frequency -->
-    <!--     dictionary—a set of elementary functions \(\mathcal{X} = \lbrace{\chi_{u, -->
-    <!--     \xi}\rbrace}_{u, \xi \in \Lambda}\) that form a group representation, where -->
-    <!--     \(u\) and \(\xi\) are time-frequency coordinates. We can then talk about the -->
-    <!--     STFT as a <i>representation</i> of the Weyl-Heisenberg group -->
-    <!--     \(\mathfrak{W}_{\tau}\). A sound \(x \in \mathcal{X}(\mathfrak{W}_{\tau})\) -->
-    <!--     can then be analyzed by way of \(\mathfrak{W}_{\tau}\)'s group actions of -->
-    <!--     translation \(\rho(\mathfrak{t})\) and modulation \(\rho(\mathfrak{m})\): -->
-    <!-- </p> -->
-    <!-- <center>\(\rho(\mathfrak{t})x = x(t - \mathfrak{t})\)</center> -->
-    <!-- <center>\(\rho(\mathfrak{m})x = x(t)e^{i2\pi\mathfrak{m}t}\)</center> -->
-    <!-- <p> -->
-    <!--     This also ends up aligning quite nicely with many paradigms in machine -->
-    <!--     learning. For example, something like a CNN can be seen computationally as a -->
-    <!--     model that "learns" common patterns at different scales in something like an -->
-    <!--     image. However, this doesn't say much about what's actually happening on a -->
-    <!--     geometric level. We could instead say that the CNN is a function or series of -->
-    <!--     functions that is approximately invariant (geometrically stable) to affine -->
-    <!--     transformations \(\rho(\mathfrak{a})\) [BSL13]. This same kind of invariance -->
-    <!--     has since been reframed in the development of the wavelet scattering -->
-    <!--     transform, an analogous construct to the CNN that produces a representation -->
-    <!--     that is both translation invariant and stable to warping deformations across -->
-    <!--     the axes of the time-frequency plane. While the scattering transform provides -->
-    <!--     an extensive multiresolution representation of sound, even a simple wavelet -->
-    <!--     representation can produce an "affinized" representation -->
-    <!--     \(\mathfrak{A}_{\tau}\) of a sound from its translation group representation -->
-    <!--     (i.e. \(x \in \mathfrak{T}_{\tau}\)) . The operator would be denoted -->
-    <!--     \(\Phi_{x}^{\mathcal{W}} : \mathcal{X}(\mathfrak{T}_{\tau}) \rightarrow -->
-    <!--     \mathcal{X}(\mathfrak{A}_{\tau})\), and serve to define the continuous wavelet -->
-    <!--     transform: -->
-    <!-- </p> -->
+        <!-- <p> -->
+        <!--     In his book <i>Sound Unseen</i>, music theorist Brian Kane points out a number -->
+        <!--     of similarities between Schaeffer's philosophy of sound and Husserlian -->
+        <!--     phenomenology [Kan14]. While this is indeed a striking comparison in itself, -->
+        <!--     it also warrants an investigation of Schaeffer's writings by proxy of -->
+        <!--     Husserl's mathematical influences. For instance, Husserl’s method of examining -->
+        <!--     the essence of objects by identifying their imagined invariant properties not -->
+        <!--     only reflects Schaeffer's writings about the invariance of the sound object, -->
+        <!--     but also reflects an important influence from contemporaneous shifts in -->
+        <!--     mathematical thinking, particularly in the realm of geometric group theory. -->
+        <!--     His use of the term invariance was not accidental, but rooted in his decision -->
+        <!--     to align his formal ontology with mathematics. Influenced by Hilbert's -->
+        <!--     axiomatization of Euclidean geometry, Cantor's set theory, and most notably -->
+        <!--     Felix Klein’s Erlangen Programme, Husserl drew from the reorientation of -->
+        <!--     geometry as the study of abstract structures, centered around the mathematical -->
+        <!--     <i>group</i>. This shift, from viewing geometry as the study of physical space -->
+        <!--     to understanding it as the science of possible forms, allowed for a move to -->
+        <!--     the study of invariant structures under transformations. Figures like Cayley, -->
+        <!--     Sylvester, Grassmann, Riemann, and others, whose work on algebraic invariants -->
+        <!--     and geometric transformations laid the groundwork for this shift, also -->
+        <!--     profoundly impacted Husserl’s own development of phenomenological invariance. -->
+        <!--     According to [Rou23], Husserl was particularly influenced by two aspects of -->
+        <!--     these geometric ideas: the epistemic transition from experienced to geometric -->
+        <!--     shapes, and the understanding of geometric concepts through interaction with -->
+        <!--     the physical world and imaginative variation. We can see this quite clearly in -->
+        <!--     Schaeffer's approach to the invariance of the sound object, which can be seen -->
+        <!--     as the sonic analogue to Klein's and Husserl’s explorations of invariant -->
+        <!--     geometry, each methodology sharing a common historical and philosophical -->
+        <!--     context. -->
+        <!-- </p> -->
+        <!-- <p> -->
+        <!--     Based on this connection, an argument could be made for the mathematical -->
+        <!--     language of the Erlangen Programme to be integrated into the Schaefferian -->
+        <!--     project—a reinterpretation of typomorphology with respect to the language of -->
+        <!--     group representation theory. In audio signal processing, we often model sound -->
+        <!--     as a rather opaque vector, for instance a continuous temporal representation -->
+        <!--     \(x \in \mathbb{R}\) or a Fourier representation \(x \in \mathbb{C}\) which -->
+        <!--     doesn't reveal much about the underlying geometric structure of the sound -->
+        <!--     we're attempting to model. Instead, we might talk about a sound \(x\) as -->
+        <!--     existing in a space endowed with the underlying symmetric structure of an -->
+        <!--     unknown group \(\mathfrak{G}\). We then make one more important assumption -->
+        <!--     about the space: the assumption that this group is a Lie group (a -->
+        <!--     differentiable manifold) which we denote with a subscript \(\tau\). By then -->
+        <!--     providing a group representation \(\mathcal{X}\) on the space, we can do -->
+        <!--     things like define the existence of a Haar measure and a norm. We can even -->
+        <!--     call it a Hilbert space by defining a map from the group representation to a -->
+        <!--     more common \(L^{2}\) space. -->
+        <!-- </p> -->
+        <!-- <center> -->
+        <!--     \(\mathcal{X}(\mathfrak{G}_{\tau}) = \lbrace{x : \mathfrak{G}_{\tau} -->
+        <!--     \rightarrow L^{2}(\mathfrak{G}_{\tau})\rbrace}\) -->
+        <!-- </center> -->
+        <!-- <p> -->
+        <!--     In this context, a number of canonical paradigms for sound fit in quite -->
+        <!--     naturally. For instance, \(\mathcal{X}\) can be thought of as a time-frequency -->
+        <!--     dictionary—a set of elementary functions \(\mathcal{X} = \lbrace{\chi_{u, -->
+        <!--     \xi}\rbrace}_{u, \xi \in \Lambda}\) that form a group representation, where -->
+        <!--     \(u\) and \(\xi\) are time-frequency coordinates. We can then talk about the -->
+        <!--     STFT as a <i>representation</i> of the Weyl-Heisenberg group -->
+        <!--     \(\mathfrak{W}_{\tau}\). A sound \(x \in \mathcal{X}(\mathfrak{W}_{\tau})\) -->
+        <!--     can then be analyzed by way of \(\mathfrak{W}_{\tau}\)'s group actions of -->
+        <!--     translation \(\rho(\mathfrak{t})\) and modulation \(\rho(\mathfrak{m})\): -->
+        <!-- </p> -->
+        <!-- <center>\(\rho(\mathfrak{t})x = x(t - \mathfrak{t})\)</center> -->
+        <!-- <center>\(\rho(\mathfrak{m})x = x(t)e^{i2\pi\mathfrak{m}t}\)</center> -->
+        <!-- <p> -->
+        <!--     This also ends up aligning quite nicely with many paradigms in machine -->
+        <!--     learning. For example, something like a CNN can be seen computationally as a -->
+        <!--     model that "learns" common patterns at different scales in something like an -->
+        <!--     image. However, this doesn't say much about what's actually happening on a -->
+        <!--     geometric level. We could instead say that the CNN is a function or series of -->
+        <!--     functions that is approximately invariant (geometrically stable) to affine -->
+        <!--     transformations \(\rho(\mathfrak{a})\) [BSL13]. This same kind of invariance -->
+        <!--     has since been reframed in the development of the wavelet scattering -->
+        <!--     transform, an analogous construct to the CNN that produces a representation -->
+        <!--     that is both translation invariant and stable to warping deformations across -->
+        <!--     the axes of the time-frequency plane. While the scattering transform provides -->
+        <!--     an extensive multiresolution representation of sound, even a simple wavelet -->
+        <!--     representation can produce an "affinized" representation -->
+        <!--     \(\mathfrak{A}_{\tau}\) of a sound from its translation group representation -->
+        <!--     (i.e. \(x \in \mathfrak{T}_{\tau}\)) . The operator would be denoted -->
+        <!--     \(\Phi_{x}^{\mathcal{W}} : \mathcal{X}(\mathfrak{T}_{\tau}) \rightarrow -->
+        <!--     \mathcal{X}(\mathfrak{A}_{\tau})\), and serve to define the continuous wavelet -->
+        <!--     transform: -->
+        <!-- </p> -->
 
-    <!-- <center> -->
-    <!--     \(\Phi_{x}^{\mathcal{W}}(a, b) = \frac{1}{\sqrt{a}}\int_{t \in -->
-    <!--     \mathbb{R}}x(t)\psi^{\ast}\left(\frac{t - b}{a}\right)dt\) -->
-    <!-- </center> -->
+        <!-- <center> -->
+        <!--     \(\Phi_{x}^{\mathcal{W}}(a, b) = \frac{1}{\sqrt{a}}\int_{t \in -->
+        <!--     \mathbb{R}}x(t)\psi^{\ast}\left(\frac{t - b}{a}\right)dt\) -->
+        <!-- </center> -->
 
-    <!-- <p> -->
-    <!--     What would a neural audio model like DDSP look like in terms of these -->
-    <!--     geometric transformations? In geometric deep learning, we commonly want to -->
-    <!--     find what's called a <i>disentangled representation</i>. Introduced by -->
-    <!--     [HAP+18], a disentangled representation is a sort of cross-disciplinary -->
-    <!--     generalization of the <i>Peter-Weyl Theorm</i>: a representation that -->
-    <!--     associates the group actions of irreducible subgroups with linearly -->
-    <!--     independent subspaces. Coincidentally, it turns out that the wavelet -->
-    <!--     decomposition inherently produces a disentangled representation of audio. -->
-    <!--     However, for other deep learning models, we have to make either geometric or -->
-    <!--     perceptual assumptions about the disentangled nature of our model. -->
-    <!-- </p> -->
-    <!-- <p> -->
-    <!--     DDSP models work at the scale of a single STFT window \(w\) and extract a -->
-    <!--     matrix of conditional parameters. This marix is then fed through a series of -->
-    <!--     neural networks to output another matrix of resynthesis parameters that are -->
-    <!--     compatible with a common synthesizer such as a noise-driven filterbank or a -->
-    <!--     harmonic-plus-noise model. We can define these operations using in terms of -->
-    <!--     idea disentangled subspaces (recall that \(\mathfrak{W}_{\tau}\) is the -->
-    <!--     Weyl-Heisenberg group from before): -->
-    <!-- </p> -->
+        <!-- <p> -->
+        <!--     What would a neural audio model like DDSP look like in terms of these -->
+        <!--     geometric transformations? In geometric deep learning, we commonly want to -->
+        <!--     find what's called a <i>disentangled representation</i>. Introduced by -->
+        <!--     [HAP+18], a disentangled representation is a sort of cross-disciplinary -->
+        <!--     generalization of the <i>Peter-Weyl Theorm</i>: a representation that -->
+        <!--     associates the group actions of irreducible subgroups with linearly -->
+        <!--     independent subspaces. Coincidentally, it turns out that the wavelet -->
+        <!--     decomposition inherently produces a disentangled representation of audio. -->
+        <!--     However, for other deep learning models, we have to make either geometric or -->
+        <!--     perceptual assumptions about the disentangled nature of our model. -->
+        <!-- </p> -->
+        <!-- <p> -->
+        <!--     DDSP models work at the scale of a single STFT window \(w\) and extract a -->
+        <!--     matrix of conditional parameters. This marix is then fed through a series of -->
+        <!--     neural networks to output another matrix of resynthesis parameters that are -->
+        <!--     compatible with a common synthesizer such as a noise-driven filterbank or a -->
+        <!--     harmonic-plus-noise model. We can define these operations using in terms of -->
+        <!--     idea disentangled subspaces (recall that \(\mathfrak{W}_{\tau}\) is the -->
+        <!--     Weyl-Heisenberg group from before): -->
+        <!-- </p> -->
 
-    <!-- <center> -->
-    <!--     \(\Gamma : \mathcal{X}(\mathfrak{W}_{\tau}) \rightarrow \bigoplus_{k = -->
-    <!--     1}^{K}W_{k}(\mathfrak{A}_{\tau})\) -->
-    <!-- </center> -->
-    <!-- <center> -->
-    <!--     \(\tilde{\Gamma} : \bigoplus_{l = 1}^{L}W_{L}(\mathfrak{A}_{\tau}) \rightarrow -->
-    <!--     \mathcal{X}(\mathfrak{W}_{\tau})\) -->
-    <!-- </center> -->
+        <!-- <center> -->
+        <!--     \(\Gamma : \mathcal{X}(\mathfrak{W}_{\tau}) \rightarrow \bigoplus_{k = -->
+        <!--     1}^{K}W_{k}(\mathfrak{A}_{\tau})\) -->
+        <!-- </center> -->
+        <!-- <center> -->
+        <!--     \(\tilde{\Gamma} : \bigoplus_{l = 1}^{L}W_{L}(\mathfrak{A}_{\tau}) \rightarrow -->
+        <!--     \mathcal{X}(\mathfrak{W}_{\tau})\) -->
+        <!-- </center> -->
 
-    <!-- <p> -->
-    <!--     where \(K\) is the number of conditional parameters and \(L\) is the number of -->
-    <!--     resynthesis parameters. The key assumption here is that these parameters are -->
-    <!--     <i>disentangled</i>, meaning that each group action on each conditional -->
-    <!--     subspace \(\rho_{|W_{k}}(\mathfrak{a})\) acts on the space independently. The -->
-    <!--     implication of this not only alludes to the fact that the DDSP network learns -->
-    <!--     these parametric actions separately, it also hints at the assumption that each -->
-    <!--     parametric action of the model exhibits perceptually independent control of -->
-    <!--     the output sound. -->
-    <!-- </p> -->
-    <!-- <p> -->
-    <!--     The DDSP model would then be denoted as a mapping between these two -->
-    <!--     disentangled parametric spaces \(f : \bigoplus_{k = -->
-    <!--     1}^{K}W_{k}(\mathfrak{A}_{\tau}) \rightarrow \bigoplus_{l = -->
-    <!--     1}^{L}W_{L}(\mathfrak{A}_{\tau})\), and the evaluation of the model is then -->
-    <!--     performed using <i>Multiscale Spectral Loss</i> (MSS) [SM23], which—much like -->
-    <!--     the wavelet representation—projects sound into an affinized space, this time -->
-    <!--     on the <i>microscale</i>. A complete commutative diagram of DDSP can be seen -->
-    <!--     here: -->
-    <!-- </p> -->
+        <!-- <p> -->
+        <!--     where \(K\) is the number of conditional parameters and \(L\) is the number of -->
+        <!--     resynthesis parameters. The key assumption here is that these parameters are -->
+        <!--     <i>disentangled</i>, meaning that each group action on each conditional -->
+        <!--     subspace \(\rho_{|W_{k}}(\mathfrak{a})\) acts on the space independently. The -->
+        <!--     implication of this not only alludes to the fact that the DDSP network learns -->
+        <!--     these parametric actions separately, it also hints at the assumption that each -->
+        <!--     parametric action of the model exhibits perceptually independent control of -->
+        <!--     the output sound. -->
+        <!-- </p> -->
+        <!-- <p> -->
+        <!--     The DDSP model would then be denoted as a mapping between these two -->
+        <!--     disentangled parametric spaces \(f : \bigoplus_{k = -->
+        <!--     1}^{K}W_{k}(\mathfrak{A}_{\tau}) \rightarrow \bigoplus_{l = -->
+        <!--     1}^{L}W_{L}(\mathfrak{A}_{\tau})\), and the evaluation of the model is then -->
+        <!--     performed using <i>Multiscale Spectral Loss</i> (MSS) [SM23], which—much like -->
+        <!--     the wavelet representation—projects sound into an affinized space, this time -->
+        <!--     on the <i>microscale</i>. A complete commutative diagram of DDSP can be seen -->
+        <!--     here: -->
+        <!-- </p> -->
 
-    <!-- <center> -->
-    <!--     <img src="diagram.png" alt="Type A [Spring Coil]" style="width: 50%" /> -->
-    <!-- </center> -->
+        <!-- <center> -->
+        <!--     <img src="diagram.png" alt="Type A [Spring Coil]" style="width: 50%" /> -->
+        <!-- </center> -->
 
-    <!-- <p> -->
-    <!--     The right side of this diagram can be interpreted as the complete analysis and -->
-    <!--     resynthesis of a single microsound through a given DDSP autoencoder model, -->
-    <!--     while the left side denotes the evaluation of the reconstructed microsound -->
-    <!--     based on its spectral loss. The perceptual deviation from the original and -->
-    <!--     reconstructed microsounds can be generalized by the magnitude of the group -->
-    <!--     action \(\lvert{\mathfrak{a}\rvert}\). We also define an extra operator -->
-    <!--     \(\mathscr{T}\) for sound matching (or "timbre transfer"). -->
-    <!-- </p> -->
+        <!-- <p> -->
+        <!--     The right side of this diagram can be interpreted as the complete analysis and -->
+        <!--     resynthesis of a single microsound through a given DDSP autoencoder model, -->
+        <!--     while the left side denotes the evaluation of the reconstructed microsound -->
+        <!--     based on its spectral loss. The perceptual deviation from the original and -->
+        <!--     reconstructed microsounds can be generalized by the magnitude of the group -->
+        <!--     action \(\lvert{\mathfrak{a}\rvert}\). We also define an extra operator -->
+        <!--     \(\mathscr{T}\) for sound matching (or "timbre transfer"). -->
+        <!-- </p> -->
 
-    <!-- <h2>Introduction</h2> -->
-    <!-- <p> -->
-    <!--     At this point, we might restate the question: why use this new theoretical -->
-    <!--     language to talk about sound? This geometric approach hints at something very -->
-    <!--     important that stems from the unique position of dealing with acousmatic -->
-    <!--     sound, be it as an engineer or a listener. Take for instance the DDSP model, -->
-    <!--     which uses MSS as an evaluation metric for microsounds. While this technique -->
-    <!--     might be relevant to sound on the microscale, it says nothing about the -->
-    <!--     invariant properties of sound on the mesoscale. Furthermore, both the -->
-    <!--     functional and perceptual independence of control parameters is not taken into -->
-    <!--     account solely by the MSS metric. These shortcomings reflect the fundamental -->
-    <!--     concerns of the Schaefferian project: that acousmatic sound (sound without a -->
-    <!--     sound source, sound in a dataset) requires an entirely new theoretical -->
-    <!--     framework for analysis. -->
-    <!-- </p> -->
-    <p>
-      This website serves as the companion site to the masters thesis
-      <i>An Acousmatic Approach to Neural Audio Synthesis</i> (Ardito, 2024),
-      providing supplementary audio examples. Some short summaries and figures
-      have been provided on this site to help contextualize the experiments. For
-      more information, please refer to the thesis.
-    </p>
-    <!-- <p> -->
-    <!--     A large contribution in this thesis culminates in the practical evaluation of -->
-    <!--     a disentanglement hypothesis to DDSP's conditional parameters. The task here -->
-    <!--     is to extract optimal microstructural control parameters from a dataset of -->
-    <!--     sounds to effectively control and condition a DDSP model during training. -->
-    <!--     These control parameters are restricted to the time-varying spectral audio -->
-    <!--     descriptors laid out in [PGS+11]. By interpreting the problem from a -->
-    <!--     group-theoretical perspective, a given microsound \(x \in -->
-    <!--     \mathcal{X}(\mathfrak{W}_{\tau})\) is projected via an operator \(\Gamma\) -->
-    <!--     into \(K\) approximately independent subspaces -->
-    <!--     \(\bigoplus_{k=1}^{K}W_{k}(\mathfrak{A}_{\tau})\). This projection ensures -->
-    <!--     that group actions are orthogonal, with each parameter -->
-    <!--     \(\rho|_{W_{k}}(\mathfrak{g})\) acting only on its designated subspace -->
-    <!--     \(W_{k}\), enabling disentanglement of control parameters as described by -->
-    <!--     [HAP+18]. This process yields a latent space where each parameter controls -->
-    <!--     distinct, perceptually independent aspects of the output. -->
-    <!-- </p> -->
-    <!-- <p> -->
-    <!--     An initial implementation of \(\Gamma\) could use Principal Component Analysis -->
-    <!--     (PCA) to extract control parameters that capture the most variance across the -->
-    <!--     dataset. However, PCA focuses on microstructural differences between sounds, -->
-    <!--     limiting its scope. A more effective approach involves incorporating -->
-    <!--     mesostructural representations to maintain equivariance between the DDSP's -->
-    <!--     control parameters and the resynthesis parameters at both the micro and -->
-    <!--     mesoscales. This allows the model to generate an expressive latent morphology -->
-    <!--     of sounds that remains invariant to larger timbral structures. In Schaefferian -->
-    <!--     terms, this approach disentangles the sound’s morphology from its typology, -->
-    <!--     offering a deeper, perceptually meaningful representation. -->
-    <!-- </p> -->
-    <!-- <p> -->
-    <!--     The method focuses on identifying a small set of spectrotemporal control -->
-    <!--     parameters most correlated with the features of a low-dimensional projection -->
-    <!--     of the dataset’s Joint Time-Frequency Scattering (JTFS) representation, as -->
-    <!--     implemented by [LYY23]. Using the isomap algorithm, the dimensionality of the -->
-    <!--     JTFS representation is reduced while preserving small Euclidean distances in -->
-    <!--     feature space, ensuring that high-dimensional representations are mapped onto -->
-    <!--     an orthogonal, low-dimensional space. This three-dimensional feature space -->
-    <!--     correlates with perceived timbral similarity, as shown by [LEHR+21]. -->
-    <!-- </p> -->
-    <!-- <p> -->
-    <!--     The model demonstrates how microstructural control parameters at the time -->
-    <!--     scale of an STFT window \(w_{T}\) correlate with mesostructural -->
-    <!--     representations at the larger time scale of a low-pass scattering filter -->
-    <!--     \(\phi_{T}\). This correlation implies that control parameters in the DDSP -->
-    <!--     model exhibit a perceptual disentanglement due to the Euclidean distance of -->
-    <!--     points in the JTFS domain, representing mesostructural perceptual distance -->
-    <!--     [LEHR+21]. Ultimately, the model provides an efficient framework for -->
-    <!--     extracting and utilizing control parameters that represent both micro and -->
-    <!--     mesostructural features of sound, making it ideal for a range of audio -->
-    <!--     synthesis applications. -->
-    <!-- </p> -->
-
-    <h2>Preliminary Models</h2>
-
-    <p>
-      We tested the hypothesis that spectrotemporal parameters from [PGS+11]
-      could enhance the timbral expressivity of a DDSP model by using two
-      categories of audio descriptors: harmonic parameters and statistical
-      parameters. Together, these findings confirm that control over these
-      parameters can shape the spectral and temporal features of the
-      reconstructed audio in predictable ways. We used the filterbank DDSP model
-      from [BRC24] for all experiments.
-    </p>
-
-    <h3>Suspended Triangle</h3>
-    <p>
-      First, we conditioned the model on harmonic parameters. We used a
-      recording of a suspended triangle and subsequently hardcoded artificial
-      values for harmonic energy and noise energy.
-      <!-- , and found that adjusting -->
-      <!-- these parameters resulted in perceptually distinct reconstructions of the -->
-      <!-- original sound, where increasing harmonic energy emphasized the partials in -->
-      <!-- the reconstructed signal and increasing noise energy increased the -->
-      <!-- stochasticity of the reconstruted signal. -->
-    </p>
-
-    <div style="text-align: center">
-      <figure>
-        <img
-          src="bells.png"
-          alt="Four spectrograms of the reconstructed triangles"
-          style="width: 100%"
-        />
-        <figcaption>
-          <i
-            >DDSP filterbank model reconstructions of suspended triangle
-            recording with hardcoded values for harmonic energy and noise
-            energy.</i
-          >
-        </figcaption>
-      </figure>
-    </div>
-
-    <table>
-      <thead>
-        <tr>
-          <th>Sound Example</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>
-            <audio controls>
-              <source
-                src="https://storage.googleapis.com/acousmatic-typomorphology-examples/tri-f.wav"
-                type="audio/mpeg"
-              />
-            </audio>
-          </td>
-          <td><b>Suspended Triangle</b> (Original Recording)</td>
-        </tr>
-        <tr>
-          <td>
-            <audio controls>
-              <source
-                src="https://storage.googleapis.com/acousmatic-typomorphology-examples/original.wav"
-                type="audio/mpeg"
-              />
-            </audio>
-          </td>
-          <td><b>Full DDSP Reconstruction</b></td>
-        </tr>
-        <tr>
-          <td>
-            <audio controls>
-              <source
-                src="https://storage.googleapis.com/acousmatic-typomorphology-examples/harm_one.wav"
-                type="audio/mpeg"
-              />
-            </audio>
-          </td>
-          <td>
-            <b>Extrapolated DDSP Reconstruction (Harmonic Energy = 1.0)</b>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <audio controls>
-              <source
-                src="https://storage.googleapis.com/acousmatic-typomorphology-examples/noise_one.wav"
-                type="audio/mpeg"
-              />
-            </audio>
-          </td>
-          <td><b>Extrapolated DDSP Reconstruction (Noise Energy = 1.0)</b></td>
-        </tr>
-      </tbody>
-    </table>
-
-    <h3>Noise Chirps</h3>
-    <p>
-      Next, we conditioned the model on common spectrotemporal parameters such
-      as kurtosis and decrease using a synthetic dataset of noise chirps with a
-      quality factor of \(Q = 1\).
-    </p>
-    <div style="text-align: center">
-      <figure>
-        <img
-          src="noise-chirp-original.png"
-          alt="Noise Chirp Original"
-          style="width: 70%"
-        />
-        <img
-          src="noise-chirp-reconstruction.png"
-          alt="Noise Chirp Reconstruction"
-          style="width: 100%"
-        />
-        <figcaption>
-          <i>DDSP filterbank model reconstructions of noise chirps</i>
-        </figcaption>
-      </figure>
-    </div>
-    <table>
-      <thead>
-        <tr>
-          <th>Sound Example</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>
-            <audio controls>
-              <source
-                src="https://storage.googleapis.com/acousmatic-typomorphology-examples/Q1.wav"
-                type="audio/mpeg"
-              />
-            </audio>
-          </td>
-          <td><b>Noise Chirp (Q = 1.0)</b> (Original Recording)</td>
-        </tr>
-        <tr>
-          <td>
-            <audio controls>
-              <source
-                src="https://storage.googleapis.com/acousmatic-typomorphology-examples/reconstruction_Q1.wav"
-                type="audio/mpeg"
-              />
-            </audio>
-          </td>
-          <td><b>Full DDSP Reconstruction</b></td>
-        </tr>
-        <tr>
-          <td>
-            <audio controls>
-              <source
-                src="https://storage.googleapis.com/acousmatic-typomorphology-examples/kurtosis_0_Q1.wav"
-                type="audio/mpeg"
-              />
-            </audio>
-          </td>
-          <td><b>Extrapolated DDSP Reconstruction (Kurtosis = 0.0)</b></td>
-        </tr>
-        <tr>
-          <td>
-            <audio controls>
-              <source
-                src="https://storage.googleapis.com/acousmatic-typomorphology-examples/kurtosis_1_Q1.wav"
-                type="audio/mpeg"
-              />
-            </audio>
-          </td>
-          <td><b>Extrapolated DDSP Reconstruction (Kurtosis = 1.0)</b></td>
-        </tr>
-        <tr>
-          <td>
-            <audio controls>
-              <source
-                src="https://storage.googleapis.com/acousmatic-typomorphology-examples/decrease_0_Q1.wav"
-                type="audio/mpeg"
-              />
-            </audio>
-          </td>
-          <td><b>Extrapolated DDSP Reconstruction (Decrease = 0.0)</b></td>
-        </tr>
-        <tr>
-          <td>
-            <audio controls>
-              <source
-                src="https://storage.googleapis.com/acousmatic-typomorphology-examples/decrease_1_Q1.wav"
-                type="audio/mpeg"
-              />
-            </audio>
-          </td>
-          <td><b>Extrapolated DDSP Reconstruction (Decrease = 1.0)</b></td>
-        </tr>
-      </tbody>
-    </table>
-
-    <h2>Friction Percussion Models</h2>
-    <p>
-      We then utilized a custom made datasets consisting of short musical
-      gestures derived from three recordings of friction percussion
-      improvisation.
-    </p>
-    <h3>Improvised Excerpts</h3>
-
-    Below are the improvised excerpts from which short sounds were extracted for
-    each of the datasets:
-
-    <table>
-      <thead>
-        <tr>
-          <th>Sound Example</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>
-            <audio controls>
-              <source
-                src="https://storage.googleapis.com/acousmatic-typomorphology-examples/b-tt.mp3"
-                type="audio/mpeg"
-              />
-            </audio>
-          </td>
-          <td><b>Type A: </b>Tom with spring coil</td>
-        </tr>
-        <tr>
-          <td>
-            <audio controls>
-              <source
-                src="https://storage.googleapis.com/acousmatic-typomorphology-examples/d-tt.mp3"
-                type="audio/mpeg"
-              />
-            </audio>
-          </td>
-          <td><b>Type B: </b>Tom played with threaded rod</td>
-        </tr>
-        <tr>
-          <td>
-            <audio controls>
-              <source
-                src="https://storage.googleapis.com/acousmatic-typomorphology-examples/e-tt.mp3"
-                type="audio/mpeg"
-              />
-            </audio>
-          </td>
-          <td><b>Type C:</b>Tom played with miniature styrofoam</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <h3>Disentanglement</h3>
-
-    <p>
-      Following the preliminary experiments which confirm that conditioning DDSP
-      on spectrotemporal audio descriptors augments the timbral control of the
-      resulting output, we now turn to the evaluation of our disentanglement
-      method which involves finding a set of disentangled spectrotemporal
-      parameters that are most correlated with the mesostructural properties of
-      the dataset. See section 6.3.3 of the thesis for details on disentangled
-      parameters.
-      <!-- This -->
-      <!-- approach defines a novel method that follows [LYY23] by estimating the best -->
-      <!-- suited spectrotemporal parameters for a dataset of sounds by measuring -->
-      <!-- parametric correlation against a low-dimensional projection of their -->
-      <!-- scattering representations. Instead of relying on prior information about the -->
-      <!-- sound sources, or simply measuring which parameters demonstrate the maximum -->
-      <!-- amount of variance across the dataset, this approach bridges a gap between -->
-      <!-- parametric evolution on the microscale—related to acousmatic morphology—and -->
-      <!-- parametric evolution on the mesoscale—emphasizing acousmatic typology. In this -->
-      <!-- regard, the proposed method focuses on reinforcing the generation of sounds -->
-      <!-- that mesostructurally resemble sounds in the dataset. -->
-    </p>
-
-    <!-- <h4>Top Ranked Correlated Features (Table 6.1)</h4> -->
-
-    <!-- <table border="1"> -->
-    <!--     <thead> -->
-    <!--         <tr style="background-color: #cccccc"> -->
-    <!--             <th>Dimension</th> -->
-    <!--             <th>1st</th> -->
-    <!--             <th>2nd</th> -->
-    <!--             <th>3rd</th> -->
-    <!--         </tr> -->
-    <!--     </thead> -->
-    <!--     <tbody> -->
-    <!--         <tr> -->
-    <!--             <td colspan="4"><strong>Type A [Spring Coil]</strong></td> -->
-    <!--         </tr> -->
-    <!--         <tr> -->
-    <!--             <td> -->
-    <!--                 <strong>W<sub>1</sub></strong> -->
-    <!--             </td> -->
-    <!--             <td>Slope</td> -->
-    <!--             <td>Centroid</td> -->
-    <!--             <td>Harmonic Spectral Deviation</td> -->
-    <!--         </tr> -->
-    <!--         <tr> -->
-    <!--             <td> -->
-    <!--                 <strong>W<sub>2</sub></strong> -->
-    <!--             </td> -->
-    <!--             <td>Inharmonicity</td> -->
-    <!--             <td>Harmonic Energy</td> -->
-    <!--             <td>Noisiness</td> -->
-    <!--         </tr> -->
-    <!--         <tr> -->
-    <!--             <td> -->
-    <!--                 <strong>W<sub>3</sub></strong> -->
-    <!--             </td> -->
-    <!--             <td>Noise Energy</td> -->
-    <!--             <td>Decrease</td> -->
-    <!--             <td>Crest</td> -->
-    <!--         </tr> -->
-    <!--         <tr> -->
-    <!--             <td colspan="4"><strong>Type B [Threaded Rod]</strong></td> -->
-    <!--         </tr> -->
-    <!--         <tr> -->
-    <!--             <td> -->
-    <!--                 <strong>W<sub>1</sub></strong> -->
-    <!--             </td> -->
-    <!--             <td>Decrease</td> -->
-    <!--             <td>Crest</td> -->
-    <!--             <td>Noisiness</td> -->
-    <!--         </tr> -->
-    <!--         <tr> -->
-    <!--             <td> -->
-    <!--                 <strong>W<sub>2</sub></strong> -->
-    <!--             </td> -->
-    <!--             <td>Slope</td> -->
-    <!--             <td>Centroid</td> -->
-    <!--             <td>Flatness</td> -->
-    <!--         </tr> -->
-    <!--         <tr> -->
-    <!--             <td> -->
-    <!--                 <strong>W<sub>3</sub></strong> -->
-    <!--             </td> -->
-    <!--             <td>Inharmonicity</td> -->
-    <!--             <td>Odd/Even Ratio</td> -->
-    <!--             <td>Centroid</td> -->
-    <!--         </tr> -->
-    <!--         <tr> -->
-    <!--             <td colspan="4"><strong>Type C [Styrofoam]</strong></td> -->
-    <!--         </tr> -->
-    <!--         <tr> -->
-    <!--             <td> -->
-    <!--                 <strong>W<sub>1</sub></strong> -->
-    <!--             </td> -->
-    <!--             <td>Harmonic Spectral Deviation</td> -->
-    <!--             <td>Inharmonicity</td> -->
-    <!--             <td>Decrease</td> -->
-    <!--         </tr> -->
-    <!--         <tr> -->
-    <!--             <td> -->
-    <!--                 <strong>W<sub>2</sub></strong> -->
-    <!--             </td> -->
-    <!--             <td>Flatness</td> -->
-    <!--             <td>Noise Energy</td> -->
-    <!--             <td>Slope</td> -->
-    <!--         </tr> -->
-    <!--         <tr> -->
-    <!--             <td> -->
-    <!--                 <strong>W<sub>3</sub></strong> -->
-    <!--             </td> -->
-    <!--             <td>Noisiness</td> -->
-    <!--             <td>Harmonic Energy</td> -->
-    <!--             <td>Crest</td> -->
-    <!--         </tr> -->
-    <!--     </tbody> -->
-    <!-- </table> -->
-
-    <!-- <h4>Principal Components Explained Variance (Table 6.2)</h4> -->
-
-    <!-- <table border="1"> -->
-    <!--     <thead> -->
-    <!--         <tr style="background-color: #cccccc"> -->
-    <!--             <th>Type A [Spring Coil]</th> -->
-    <!--             <th>Explained Variance</th> -->
-    <!--         </tr> -->
-    <!--     </thead> -->
-    <!--     <tbody> -->
-    <!--         <tr> -->
-    <!--             <td>Centroid</td> -->
-    <!--             <td>0.517</td> -->
-    <!--         </tr> -->
-    <!--         <tr> -->
-    <!--             <td><strong>Slope</strong></td> -->
-    <!--             <td>0.327</td> -->
-    <!--         </tr> -->
-    <!--         <tr> -->
-    <!--             <td>Crest</td> -->
-    <!--             <td>0.074</td> -->
-    <!--         </tr> -->
-    <!--     </tbody> -->
-    <!-- </table> -->
-
-    <!-- <table border="1"> -->
-    <!--     <thead> -->
-    <!--         <tr style="background-color: #cccccc"> -->
-    <!--             <th>Type B [Threaded Rod]</th> -->
-    <!--             <th>Explained Variance</th> -->
-    <!--         </tr> -->
-    <!--     </thead> -->
-    <!--     <tbody> -->
-    <!--         <tr> -->
-    <!--             <td>Centroid</td> -->
-    <!--             <td>0.506</td> -->
-    <!--         </tr> -->
-    <!--         <tr> -->
-    <!--             <td><strong>Slope</strong></td> -->
-    <!--             <td>0.175</td> -->
-    <!--         </tr> -->
-    <!--         <tr> -->
-    <!--             <td><strong>Decrease</strong></td> -->
-    <!--             <td>0.130</td> -->
-    <!--         </tr> -->
-    <!--     </tbody> -->
-    <!-- </table> -->
-
-    <!-- <table border="1"> -->
-    <!--     <thead> -->
-    <!--         <tr style="background-color: #cccccc"> -->
-    <!--             <th>Type C [Styrofoam]</th> -->
-    <!--             <th>Explained Variance</th> -->
-    <!--         </tr> -->
-    <!--     </thead> -->
-    <!--     <tbody> -->
-    <!--         <tr> -->
-    <!--             <td>Slope</td> -->
-    <!--             <td>0.526</td> -->
-    <!--         </tr> -->
-    <!--         <tr> -->
-    <!--             <td>Decrease</td> -->
-    <!--             <td>0.264</td> -->
-    <!--         </tr> -->
-    <!--         <tr> -->
-    <!--             <td><strong>Flatness</strong></td> -->
-    <!--             <td>0.089</td> -->
-    <!--         </tr> -->
-    <!--     </tbody> -->
-    <!-- </table> -->
-
-    <!-- <p> -->
-    <!--     Qualitatively, we can analyze these results in accordance to the timbral -->
-    <!--     features of each sound type. Type A contains potentially the most diverse -->
-    <!--     range of features, in which the spring coil not only produces resonant sounds -->
-    <!--     that are both low and high in frequency, but also produces a fair amount of -->
-    <!--     distinct stochastic components. The disentanglement method's selection of -->
-    <!--     slope, inharmonicity, and noise energy seems to capture this diverse range of -->
-    <!--     features, as this collection of descriptors contains features that deal with -->
-    <!--     complex harmonic structure (inharmonicity), stochasticity (noise energy), and -->
-    <!--     control of the spectrum based on statistical distribution of energy (slope). -->
-    <!-- </p> -->
-
-    <!-- <p> -->
-    <!--     Type B contains very sharp and noisy transients that take up most of the -->
-    <!--     frequency spectrum below 16kHz due to the threaded rod scraping up against the -->
-    <!--     rim of the floor tom. As a result of these sharp transients, the resonant -->
-    <!--     modes of the tom are also apparent in the signal. For this type of playing -->
-    <!--     technique, the model's selection of both slope and decrease may reflect the -->
-    <!--     need for a refined slope metric in both the high and low frequency ranges of -->
-    <!--     the spectrum. This could be due to the signal's combination of high-frequency -->
-    <!--     transients caused by the periodic scraping of the threaded rod on the tom rim, -->
-    <!--     and low-frequency resonance that results from this action in its periodic -->
-    <!--     exciting and damping of the drum membrane. Inharmonicity then allows the model -->
-    <!--     to capture the resonant components produced by the threaded rod. -->
-    <!-- </p> -->
-
-    <!-- <p> -->
-    <!--     Finally, Type C contains potentially the most stochastic sounds, as the effect -->
-    <!--     of rubbing styrofoam against the drum membrane often produces a clear pitch -->
-    <!--     while still containing a substantial amount of noise. This is clearly -->
-    <!--     reflected in the model's choice of parameters, which include both flatness and -->
-    <!--     noisiness measures for distinguishing between harmonic peaks and noise energy, -->
-    <!--     while harmonic spectral deviation measures the deviation of amplitudes between -->
-    <!--     the harmonic peaks. -->
-    <!-- </p> -->
-
-    <h3>Reconstructions</h3>
-
-    <p>
-      Below are the reconstruction results of the friction percussion models
-      trained using both the DDSP model with the disentangled parameter set and
-      from the model with the baseline parameter set (i.e. the top scoring PCA
-      parameter).
-    </p>
-
-    <p>
-      <!-- This section evaluates the performance of disentangled models by generating -->
-      <!-- sounds through extrapolation of conditional parameters and measuring their -->
-      <!-- mesostructural similarity. Each model's latent space is approximated by -->
-      <!-- generating 100 new sounds, each lasting 1 second. These sounds are plotted in -->
-      <!-- isomap space, with colors representing a specific spectrotemporal parameter, -->
-      <!-- following a procedure from [LYY23]. The hypothesis is that isomap space groups -->
-      <!-- timbrally similar sounds closer together, due to the JTFS transform's ability -->
-      <!-- to model timbral similarity. -->
-    </p>
-    <div style="text-align: center">
-      <figure>
-        <img
-          src="friction-1.png"
-          alt="Type A [Spring Coil]"
-          style="width: 100%"
-        />
-        <figcaption>Type A [Spring Coil]</figcaption>
-      </figure>
-      <br />
-      <figure>
-        <img
-          src="friction-2.png"
-          alt="Type B [Threaded Rod]"
-          style="width: 100%"
-        />
-        <figcaption>Type B [Threaded Rod]</figcaption>
-      </figure>
-      <br />
-      <figure>
-        <img
-          src="friction-3.png"
-          alt="Type C [Styrofoam]"
-          style="width: 100%"
-        />
-        <figcaption>Type C [Styrofoam]</figcaption>
-      </figure>
-      <figcaption>
+        <!-- <h2>Introduction</h2> -->
+        <!-- <p> -->
+        <!--     At this point, we might restate the question: why use this new theoretical -->
+        <!--     language to talk about sound? This geometric approach hints at something very -->
+        <!--     important that stems from the unique position of dealing with acousmatic -->
+        <!--     sound, be it as an engineer or a listener. Take for instance the DDSP model, -->
+        <!--     which uses MSS as an evaluation metric for microsounds. While this technique -->
+        <!--     might be relevant to sound on the microscale, it says nothing about the -->
+        <!--     invariant properties of sound on the mesoscale. Furthermore, both the -->
+        <!--     functional and perceptual independence of control parameters is not taken into -->
+        <!--     account solely by the MSS metric. These shortcomings reflect the fundamental -->
+        <!--     concerns of the Schaefferian project: that acousmatic sound (sound without a -->
+        <!--     sound source, sound in a dataset) requires an entirely new theoretical -->
+        <!--     framework for analysis. -->
+        <!-- </p> -->
         <p>
-          <i
-            >Manifolds from each disentangled model generated by applying a
-            convex hull to the outer-most sounds in the isomap JTFS space. Color
-            hues depict the mean value of the spectrotemporal parameter
-            associated with each plot.</i
-          >
+            This website serves as the companion site to the masters thesis
+            <i>An Acousmatic Approach to Neural Audio Synthesis</i> (Ardito, 2024),
+            providing supplementary audio examples. Some short summaries and figures have
+            been provided on this site to help contextualize the experiments. For more
+            information, please refer to the thesis.
         </p>
-      </figcaption>
-    </div>
+        <!-- <p> -->
+        <!--     A large contribution in this thesis culminates in the practical evaluation of -->
+        <!--     a disentanglement hypothesis to DDSP's conditional parameters. The task here -->
+        <!--     is to extract optimal microstructural control parameters from a dataset of -->
+        <!--     sounds to effectively control and condition a DDSP model during training. -->
+        <!--     These control parameters are restricted to the time-varying spectral audio -->
+        <!--     descriptors laid out in [PGS+11]. By interpreting the problem from a -->
+        <!--     group-theoretical perspective, a given microsound \(x \in -->
+        <!--     \mathcal{X}(\mathfrak{W}_{\tau})\) is projected via an operator \(\Gamma\) -->
+        <!--     into \(K\) approximately independent subspaces -->
+        <!--     \(\bigoplus_{k=1}^{K}W_{k}(\mathfrak{A}_{\tau})\). This projection ensures -->
+        <!--     that group actions are orthogonal, with each parameter -->
+        <!--     \(\rho|_{W_{k}}(\mathfrak{g})\) acting only on its designated subspace -->
+        <!--     \(W_{k}\), enabling disentanglement of control parameters as described by -->
+        <!--     [HAP+18]. This process yields a latent space where each parameter controls -->
+        <!--     distinct, perceptually independent aspects of the output. -->
+        <!-- </p> -->
+        <!-- <p> -->
+        <!--     An initial implementation of \(\Gamma\) could use Principal Component Analysis -->
+        <!--     (PCA) to extract control parameters that capture the most variance across the -->
+        <!--     dataset. However, PCA focuses on microstructural differences between sounds, -->
+        <!--     limiting its scope. A more effective approach involves incorporating -->
+        <!--     mesostructural representations to maintain equivariance between the DDSP's -->
+        <!--     control parameters and the resynthesis parameters at both the micro and -->
+        <!--     mesoscales. This allows the model to generate an expressive latent morphology -->
+        <!--     of sounds that remains invariant to larger timbral structures. In Schaefferian -->
+        <!--     terms, this approach disentangles the sound’s morphology from its typology, -->
+        <!--     offering a deeper, perceptually meaningful representation. -->
+        <!-- </p> -->
+        <!-- <p> -->
+        <!--     The method focuses on identifying a small set of spectrotemporal control -->
+        <!--     parameters most correlated with the features of a low-dimensional projection -->
+        <!--     of the dataset’s Joint Time-Frequency Scattering (JTFS) representation, as -->
+        <!--     implemented by [LYY23]. Using the isomap algorithm, the dimensionality of the -->
+        <!--     JTFS representation is reduced while preserving small Euclidean distances in -->
+        <!--     feature space, ensuring that high-dimensional representations are mapped onto -->
+        <!--     an orthogonal, low-dimensional space. This three-dimensional feature space -->
+        <!--     correlates with perceived timbral similarity, as shown by [LEHR+21]. -->
+        <!-- </p> -->
+        <!-- <p> -->
+        <!--     The model demonstrates how microstructural control parameters at the time -->
+        <!--     scale of an STFT window \(w_{T}\) correlate with mesostructural -->
+        <!--     representations at the larger time scale of a low-pass scattering filter -->
+        <!--     \(\phi_{T}\). This correlation implies that control parameters in the DDSP -->
+        <!--     model exhibit a perceptual disentanglement due to the Euclidean distance of -->
+        <!--     points in the JTFS domain, representing mesostructural perceptual distance -->
+        <!--     [LEHR+21]. Ultimately, the model provides an efficient framework for -->
+        <!--     extracting and utilizing control parameters that represent both micro and -->
+        <!--     mesostructural features of sound, making it ideal for a range of audio -->
+        <!--     synthesis applications. -->
+        <!-- </p> -->
 
-    <!-- <table style="width: 100%; border: 1px solid black; border-collapse: collapse"> -->
-    <!--     <thead style="background-color: #d3d3d3"> -->
-    <!--         <tr> -->
-    <!--             <th></th> -->
-    <!--             <th>Sum of Pairwise Distances (L1)</th> -->
-    <!--             <th>Sum of Pairwise Distances (L2)</th> -->
-    <!--             <th>Convex Hull Volume</th> -->
-    <!--         </tr> -->
-    <!--     </thead> -->
-    <!--     <tbody> -->
-    <!--         <tr> -->
-    <!--             <td>Baseline</td> -->
-    <!--             <td>0.4413</td> -->
-    <!--             <td>0.3286</td> -->
-    <!--             <td>0.0463</td> -->
-    <!--         </tr> -->
-    <!--         <tr> -->
-    <!--             <td>Disentangled</td> -->
-    <!--             <td><b>0.2525</b></td> -->
-    <!--             <td><b>0.1991</b></td> -->
-    <!--             <td><b>0.0341</b></td> -->
-    <!--         </tr> -->
-    <!--     </tbody> -->
-    <!-- </table> -->
+        <h2>Preliminary Models</h2>
 
-    <!-- <table -->
-    <!--     style=" -->
-    <!--         width: 100%; -->
-    <!--         border: 1px solid black; -->
-    <!--         border-collapse: collapse; -->
-    <!--         margin-top: 20px; -->
-    <!--     " -->
-    <!-- > -->
-    <!--     <thead style="background-color: #d3d3d3"> -->
-    <!--         <tr> -->
-    <!--             <th></th> -->
-    <!--             <th>Sum of Pairwise Distances (L1)</th> -->
-    <!--             <th>Sum of Pairwise Distances (L2)</th> -->
-    <!--             <th>Convex Hull Volume</th> -->
-    <!--         </tr> -->
-    <!--     </thead> -->
-    <!--     <tbody> -->
-    <!--         <tr> -->
-    <!--             <td>Baseline</td> -->
-    <!--             <td>0.3134</td> -->
-    <!--             <td>0.2568</td> -->
-    <!--             <td>0.0167</td> -->
-    <!--         </tr> -->
-    <!--         <tr> -->
-    <!--             <td>Disentangled</td> -->
-    <!--             <td><b>0.1245</b></td> -->
-    <!--             <td><b>0.0900</b></td> -->
-    <!--             <td><b>0.0162</b></td> -->
-    <!--         </tr> -->
-    <!--     </tbody> -->
-    <!-- </table> -->
+        <p>
+            We tested the hypothesis that spectrotemporal parameters from [PGS+11] could
+            enhance the timbral expressivity of a DDSP model by using two categories of
+            audio descriptors: harmonic parameters and statistical parameters. Together,
+            these findings confirm that control over these parameters can shape the
+            spectral and temporal features of the reconstructed audio in predictable ways.
+            We used the filterbank DDSP model from [BRC24] for all experiments.
+        </p>
 
-    <!-- <table -->
-    <!--     style=" -->
-    <!--         width: 100%; -->
-    <!--         border: 1px solid black; -->
-    <!--         border-collapse: collapse; -->
-    <!--         margin-top: 20px; -->
-    <!--     " -->
-    <!-- > -->
-    <!--     <thead style="background-color: #d3d3d3"> -->
-    <!--         <tr> -->
-    <!--             <th></th> -->
-    <!--             <th>Sum of Pairwise Distances (L1)</th> -->
-    <!--             <th>Sum of Pairwise Distances (L2)</th> -->
-    <!--             <th>Convex Hull Volume</th> -->
-    <!--         </tr> -->
-    <!--     </thead> -->
-    <!--     <tbody> -->
-    <!--         <tr> -->
-    <!--             <td>Baseline</td> -->
-    <!--             <td>0.4937</td> -->
-    <!--             <td>0.3541</td> -->
-    <!--             <td><b>0.0675</b></td> -->
-    <!--         </tr> -->
-    <!--         <tr> -->
-    <!--             <td>Disentangled</td> -->
-    <!--             <td><b>0.4479</b></td> -->
-    <!--             <td><b>0.3170</b></td> -->
-    <!--             <td>0.0786</td> -->
-    <!--         </tr> -->
-    <!--     </tbody> -->
-    <!-- </table> -->
-    <!-- <p> -->
-    <!--     The generated sound manifolds for each model are represented by convex hulls -->
-    <!--     around the outermost points in the isomap space, creating hypothetical sound -->
-    <!--     objects. Visual analysis shows that Type A and Type B models exhibit a strong -->
-    <!--     correlation between sound parameters and isomap space dimensions, suggesting -->
-    <!--     that these models capture both microstructural and mesostructural sound -->
-    <!--     properties. However, Type C shows less correlation, potentially due to the -->
-    <!--     noisy nature of the styrofoam sounds. -->
-    <!-- </p> -->
+        <h3>Suspended Triangle</h3>
+        <p>
+            First, we conditioned the model on harmonic parameters. We used a recording of
+            a suspended triangle and subsequently hardcoded artificial values for harmonic
+            energy and noise energy.
+            <!-- , and found that adjusting -->
+            <!-- these parameters resulted in perceptually distinct reconstructions of the -->
+            <!-- original sound, where increasing harmonic energy emphasized the partials in -->
+            <!-- the reconstructed signal and increasing noise energy increased the -->
+            <!-- stochasticity of the reconstruted signal. -->
+        </p>
 
-    <!-- <p> -->
-    <!--     Geometrically, smaller manifold volumes suggest more timbrally homogeneous -->
-    <!--     spaces, with more compact clusters representing smoother, more continuous -->
-    <!--     latent spaces. Disentangled models show more compact clusters than baseline -->
-    <!--     models, which condition only on loudness and the top-scoring parameter from -->
-    <!--     PCA. Quantitative measures of compactness using L1 and L2 pairwise distances -->
-    <!--     and convex hull volumes also confirm this compactness for Type A and Type B -->
-    <!--     models, while Type C deviates. -->
-    <!-- </p> -->
-
-    <div class="grid grid-3x3">
-      <div>
-        Type A (Original Recording)
-        <audio controls>
-          <source
-            src="https://storage.googleapis.com/acousmatic-typomorphology-examples/b-original.mp3"
-            type="audio/mpeg"
-          />
-        </audio>
-      </div>
-      <div>
-        Baseline (DDSP Reconstruction)
-        <audio controls>
-          <source
-            src="https://storage.googleapis.com/acousmatic-typomorphology-examples/b-baseline-output.mp3"
-            type="audio/mpeg"
-          />
-        </audio>
-      </div>
-      <div>
-        Disentangled (DDSP Reconstruction)
-        <audio controls>
-          <source
-            src="https://storage.googleapis.com/acousmatic-typomorphology-examples/b-output.mp3"
-            type="audio/mpeg"
-          />
-        </audio>
-      </div>
-    </div>
-    <div class="grid grid-3x3">
-      <div>
-        Type B (Original Recording)
-        <audio controls>
-          <source
-            src="https://storage.googleapis.com/acousmatic-typomorphology-examples/d-original.mp3"
-            type="audio/mpeg"
-          />
-        </audio>
-      </div>
-      <div>
-        Baseline (DDSP Reconstruction)
-        <audio controls>
-          <source
-            src="https://storage.googleapis.com/acousmatic-typomorphology-examples/d-baseline-output.mp3"
-            type="audio/mpeg"
-          />
-        </audio>
-      </div>
-      <div>
-        Disentangled (DDSP Reconstruction)
-        <audio controls>
-          <source
-            src="https://storage.googleapis.com/acousmatic-typomorphology-examples/d-output.mp3"
-            type="audio/mpeg"
-          />
-        </audio>
-      </div>
-    </div>
-
-    <div class="grid grid-3x3">
-      <div>
-        Type C (Original Recording)
-        <audio controls>
-          <source
-            src="https://storage.googleapis.com/acousmatic-typomorphology-examples/e-original.mp3"
-            type="audio/mpeg"
-          />
-        </audio>
-      </div>
-      <div>
-        Baseline (DDSP Reconstruction)
-        <audio controls>
-          <source
-            src="https://storage.googleapis.com/acousmatic-typomorphology-examples/e-baseline-output.mp3"
-            type="audio/mpeg"
-          />
-        </audio>
-      </div>
-      <div>
-        Disentangled (DDSP Reconstruction)
-        <audio controls>
-          <source
-            src="https://storage.googleapis.com/acousmatic-typomorphology-examples/e-output.mp3"
-            type="audio/mpeg"
-          />
-        </audio>
-      </div>
-    </div>
-
-    <h2>Typomorphological Experiments</h2>
-
-    <p>
-      Finally, we experiment with the spectrotemporal audio descriptors on
-      real-world sounds by implementing a method for typomorphological
-      synthesis.
-      <!-- The driving idea here is to "morph" between two different sound types by -->
-      <!-- training a single DDSP model on the union of two datasets that each reflect -->
-      <!-- the sound types in question. When conditioned on a sufficient number of -->
-      <!-- spectrotemporal parameters, a sound from the initial sound type would be able -->
-      <!-- to seamlessly morph into a sound from the terminal sound type over a certain -->
-      <!-- number of iterations. This can be represented using a series of points in the -->
-      <!-- scattering isomap, which form a pathway connecting the iterated sounds -->
-      <!-- extrapolated from morphing between the initial and terminal sound types. The -->
-      <!-- trajectory thus outlines a continuous affine group action on the control -->
-      <!-- parameter vector \(\rho(\mathfrak{a})\mathbf{V}\) which morphs the -->
-      <!-- microstructural parameters of the initial sound into those of the terminal -->
-      <!-- sound while retaining a suitable mesostructural topology in the scattering -->
-      <!-- domain. We implement the morphology of control parameters from the initial -->
-      <!-- sound to the terminal sound using a simple linear interpolation such that the -->
-      <!-- intial sound’s control matrix \(\mathbf{V}_{1}\) morphs into the terminal -->
-      <!-- sound’s control matrix \(\mathbf{V}_{2}\). The typomorphological synthesizer -->
-      <!-- was trained on two different dataset pairs. The first pair consisted of -->
-      <!-- environemntal sounds: field recordings of rainfall and recordings of applause. -->
-      <!-- The second pair of datasets consisted of a collection of dog barks along with -->
-      <!-- a collection of snare drum strikes. Both datasets were compiled using creative -->
-      <!-- commons (CC) licensed sounds available on -->
-      <!-- <a href="https://freesound.org/">freesound.org</a>. -->
-    </p>
-
-    <!-- <p> -->
-    <!--     The reconstructions are somewhat perceptually convincing even though they -->
-    <!--     produce some ambiguous timbral qualities. For instance, there is a general -->
-    <!--     increase in harmonic energy in the dog bark → snare drum model, even though -->
-    <!--     the dog bark reconstruction more acurately takes after the original recording -->
-    <!--     in its spectral envelope. In the environemnental model, we hear that the -->
-    <!--     rainfall resembles its original recording much more accurately than the -->
-    <!--     applause, which ends up sounding sharper and contains higher-frequency -->
-    <!--     transients. Upon listening to the morphological trajectories and observing the -->
-    <!--     scattering plots, we might conclude that these models provide interesting -->
-    <!--     situations in which the acousmatic ambivalence between two sound types is -->
-    <!--     exploited, in that the resulting models often favor the spectral -->
-    <!--     characteristics of one sound type at the expense of the other. While a more -->
-    <!--     accurate overall reconstruction might be achieved using a more intricate DDSP -->
-    <!--     synthesis operation, this ambivalence also has the potential to be creatively -->
-    <!--     exploited in an acousmatic compositional setting. -->
-    <!-- </p> -->
-
-    <div style="text-align: center">
-      <figure>
-        <img
-          src="morphology.png"
-          alt="Plots depicting typomorphology with JTFS coordinates"
-          style="width: 100%"
-        />
-        <figcaption>
-          <i
-            >Typomorphological neural audio synthesis performed on two different
-            pairs of sound types</i
-          >
-        </figcaption>
-      </figure>
-    </div>
-    <style>
-      .table-wrapper {
-        display: flex;
-        justify-content: center; /* Adds space between the two tables */
-        gap: 20%; /* Optional: add a gap between the tables */
-      }
-      .table-container {
-        width: 35%; /* Adjust the width of each table container */
-      }
-    </style>
-
-    <div class="table-wrapper">
-      <div class="table-container">
-        <h3>Dog Barking &rarr; Snare Drum</h3>
-        <table border="1">
-          <tr>
-            <td>
-              Dog Barking (Original Recording)
-              <audio controls>
-                <source
-                  src="https://storage.googleapis.com/acousmatic-typomorphology-examples/og_dog.wav"
-                  type="audio/mpeg"
+        <div style="text-align: center">
+            <figure>
+                <img
+                    src="bells.png"
+                    alt="Four spectrograms of the reconstructed triangles"
+                    style="width: 100%"
                 />
-                Your browser does not support the audio element.
-              </audio>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              Dog Barking (DDSP Reconstruction)
-              <audio controls>
-                <source
-                  src="https://storage.googleapis.com/acousmatic-typomorphology-examples/dog_reconstruction.wav"
-                  type="audio/mpeg"
-                />
-                Your browser does not support the audio element.
-              </audio>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              Snare Drum (Original Recording)
-              <audio controls>
-                <source
-                  src="https://storage.googleapis.com/acousmatic-typomorphology-examples/og_snare.wav"
-                  type="audio/mpeg"
-                />
-                Your browser does not support the audio element.
-              </audio>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              Snare Drum (DDSP Reconstruction)
-              <audio controls>
-                <source
-                  src="https://storage.googleapis.com/acousmatic-typomorphology-examples/snare_reconstruction.wav"
-                  type="audio/mpeg"
-                />
-                Your browser does not support the audio element.
-              </audio>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              Dog &rarr; Snare
-              <audio controls>
-                <source
-                  src="https://storage.googleapis.com/acousmatic-typomorphology-examples/dog_to_snare.wav"
-                  type="audio/mpeg"
-                />
-                Your browser does not support the audio element.
-              </audio>
-            </td>
-          </tr>
+                <figcaption>
+                    <i
+                        >DDSP filterbank model reconstructions of suspended triangle
+                        recording with hardcoded values for harmonic energy and noise
+                        energy.</i
+                    >
+                </figcaption>
+            </figure>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Sound Example</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <audio controls>
+                            <source
+                                src="https://storage.googleapis.com/acousmatic-typomorphology-examples/tri-f.wav"
+                                type="audio/mpeg"
+                            />
+                        </audio>
+                    </td>
+                    <td><b>Suspended Triangle</b> (Original Recording)</td>
+                </tr>
+                <tr>
+                    <td>
+                        <audio controls>
+                            <source
+                                src="https://storage.googleapis.com/acousmatic-typomorphology-examples/original.wav"
+                                type="audio/mpeg"
+                            />
+                        </audio>
+                    </td>
+                    <td><b>Full DDSP Reconstruction</b></td>
+                </tr>
+                <tr>
+                    <td>
+                        <audio controls>
+                            <source
+                                src="https://storage.googleapis.com/acousmatic-typomorphology-examples/harm_one.wav"
+                                type="audio/mpeg"
+                            />
+                        </audio>
+                    </td>
+                    <td>
+                        <b>Extrapolated DDSP Reconstruction (Harmonic Energy = 1.0)</b>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <audio controls>
+                            <source
+                                src="https://storage.googleapis.com/acousmatic-typomorphology-examples/noise_one.wav"
+                                type="audio/mpeg"
+                            />
+                        </audio>
+                    </td>
+                    <td><b>Extrapolated DDSP Reconstruction (Noise Energy = 1.0)</b></td>
+                </tr>
+            </tbody>
         </table>
-      </div>
 
-      <div class="table-container">
-        <h3>Applause &rarr; Rainfall</h3>
-        <table border="1">
-          <tr>
-            <td>
-              Applause (Original Recording)
-              <audio controls>
-                <source
-                  src="https://storage.googleapis.com/acousmatic-typomorphology-examples/og_clap.wav"
-                  type="audio/mpeg"
+        <h3>Noise Chirps</h3>
+        <p>
+            Next, we conditioned the model on common spectrotemporal parameters such as
+            kurtosis and decrease using a synthetic dataset of noise chirps with a quality
+            factor of \(Q = 1\).
+        </p>
+        <div style="text-align: center">
+            <figure>
+                <img
+                    src="noise-chirp-original.png"
+                    alt="Noise Chirp Original"
+                    style="width: 70%"
                 />
-                Your browser does not support the audio element.
-              </audio>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              Applause (DDSP Reconstruction)
-              <audio controls>
-                <source
-                  src="https://storage.googleapis.com/acousmatic-typomorphology-examples/clap_reconstructed.wav"
-                  type="audio/mpeg"
+                <img
+                    src="noise-chirp-reconstruction.png"
+                    alt="Noise Chirp Reconstruction"
+                    style="width: 100%"
                 />
-                Your browser does not support the audio element.
-              </audio>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              Rainfall (Original Recording)
-              <audio controls>
-                <source
-                  src="https://storage.googleapis.com/acousmatic-typomorphology-examples/og_rain.wav"
-                  type="audio/mpeg"
-                />
-                Your browser does not support the audio element.
-              </audio>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              Rainfall (DDSP Reconstruction)
-              <audio controls>
-                <source
-                  src="https://storage.googleapis.com/acousmatic-typomorphology-examples/rain_reconstructed.wav"
-                  type="audio/mpeg"
-                />
-                Your browser does not support the audio element.
-              </audio>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              Applause &rarr; Rainfall
-              <audio controls>
-                <source
-                  src="https://storage.googleapis.com/acousmatic-typomorphology-examples/clap_to_rain.wav"
-                  type="audio/mpeg"
-                />
-                Your browser does not support the audio element.
-              </audio>
-            </td>
-          </tr>
+                <figcaption>
+                    <i>DDSP filterbank model reconstructions of noise chirps</i>
+                </figcaption>
+            </figure>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Sound Example</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <audio controls>
+                            <source
+                                src="https://storage.googleapis.com/acousmatic-typomorphology-examples/Q1.wav"
+                                type="audio/mpeg"
+                            />
+                        </audio>
+                    </td>
+                    <td><b>Noise Chirp (Q = 1.0)</b> (Original Recording)</td>
+                </tr>
+                <tr>
+                    <td>
+                        <audio controls>
+                            <source
+                                src="https://storage.googleapis.com/acousmatic-typomorphology-examples/reconstruction_Q1.wav"
+                                type="audio/mpeg"
+                            />
+                        </audio>
+                    </td>
+                    <td><b>Full DDSP Reconstruction</b></td>
+                </tr>
+                <tr>
+                    <td>
+                        <audio controls>
+                            <source
+                                src="https://storage.googleapis.com/acousmatic-typomorphology-examples/kurtosis_0_Q1.wav"
+                                type="audio/mpeg"
+                            />
+                        </audio>
+                    </td>
+                    <td><b>Extrapolated DDSP Reconstruction (Kurtosis = 0.0)</b></td>
+                </tr>
+                <tr>
+                    <td>
+                        <audio controls>
+                            <source
+                                src="https://storage.googleapis.com/acousmatic-typomorphology-examples/kurtosis_1_Q1.wav"
+                                type="audio/mpeg"
+                            />
+                        </audio>
+                    </td>
+                    <td><b>Extrapolated DDSP Reconstruction (Kurtosis = 1.0)</b></td>
+                </tr>
+                <tr>
+                    <td>
+                        <audio controls>
+                            <source
+                                src="https://storage.googleapis.com/acousmatic-typomorphology-examples/decrease_0_Q1.wav"
+                                type="audio/mpeg"
+                            />
+                        </audio>
+                    </td>
+                    <td><b>Extrapolated DDSP Reconstruction (Decrease = 0.0)</b></td>
+                </tr>
+                <tr>
+                    <td>
+                        <audio controls>
+                            <source
+                                src="https://storage.googleapis.com/acousmatic-typomorphology-examples/decrease_1_Q1.wav"
+                                type="audio/mpeg"
+                            />
+                        </audio>
+                    </td>
+                    <td><b>Extrapolated DDSP Reconstruction (Decrease = 1.0)</b></td>
+                </tr>
+            </tbody>
         </table>
-      </div>
-    </div>
 
-    <!-- <h2>Acknowledgements</h2> -->
-    <!-- Please consider citing this thesis if used in your work -->
-    <!-- <pre> -->
-    <!-- <code> -->
-    <!-- @mastersthesis{Ardito2024, -->
-    <!--   author       = {Max Ardito}, -->
-    <!--   title        = {{An Acousmatic Approach to Neural Audio Synthesis}}, -->
-    <!--   school       = {McGill University}, -->
-    <!--   year         = {2024}, -->
-    <!--   address      = {Montréal, Quebec, Canada}, -->
-    <!--   type         = {Master's Thesis}, -->
-    <!--   url          = {TODO: URL of the Thesis (if available)}, -->
-    <!-- } -->
-    <!-- </code> -->
-    <!-- </pre> -->
+        <h2>Friction Percussion Models</h2>
+        <p>
+            We then utilized a custom made datasets consisting of short musical gestures
+            derived from three recordings of friction percussion improvisation.
+        </p>
+        <h3>Improvised Excerpts</h3>
 
-    <h2>Citations</h2>
-    <p>
-      [BRC24] Adrián Barahona-Ríos and Tom Collins. NoiseBandNet: Controllable
-      Time- Varying Neural Synthesis of Sound Effects Using Filterbanks.
-      IEEE/ACM Transactions on Audio, Speech, and Language Processing,
-      32:1573–1585, 2024.
-    </p>
-    <!-- <p> -->
-    <!--     [HAP+ 18] Irina Higgins, David Amos, David Pfau, Sebastien Racaniere, Loic -->
-    <!--     Matthey, Danilo Rezende, and Alexander Lerchner. Towards a Definition of -->
-    <!--     Disentangled Representations, 2018. https://arxiv.org/abs/1812.02230. -->
-    <!-- </p> -->
+        Below are the improvised excerpts from which short sounds were extracted for each
+        of the datasets:
 
-    <!-- <p> -->
-    <!--     [LEHR+ 21] Vincent Lostanlen, Chady El-Hajj, Matthieu Rossignol, Gérard Lafay, -->
-    <!--     Joakim Andén, and Mathieu Lagrange. Time-Frequency Scattering Accurately -->
-    <!--     Models Auditory Similarities Between Instrumental Playing Techniques. EURASIP -->
-    <!--     Journal on Audio, Speech, and Music Processing, 2021(1):3, 2021. Epub 2021 Jan -->
-    <!--     11. -->
-    <!-- </p> -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Sound Example</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <audio controls>
+                            <source
+                                src="https://storage.googleapis.com/acousmatic-typomorphology-examples/b-tt.mp3"
+                                type="audio/mpeg"
+                            />
+                        </audio>
+                    </td>
+                    <td><b>Type A: </b>Tom with spring coil</td>
+                </tr>
+                <tr>
+                    <td>
+                        <audio controls>
+                            <source
+                                src="https://storage.googleapis.com/acousmatic-typomorphology-examples/d-tt.mp3"
+                                type="audio/mpeg"
+                            />
+                        </audio>
+                    </td>
+                    <td><b>Type B: </b>Tom played with threaded rod</td>
+                </tr>
+                <tr>
+                    <td>
+                        <audio controls>
+                            <source
+                                src="https://storage.googleapis.com/acousmatic-typomorphology-examples/e-tt.mp3"
+                                type="audio/mpeg"
+                            />
+                        </audio>
+                    </td>
+                    <td><b>Type C:</b>Tom played with miniature styrofoam</td>
+                </tr>
+            </tbody>
+        </table>
 
-    <!-- <p> -->
-    <!--     [LYY23] Vincent Lostanlen, Lingyao Yan, and Xianyi Yang. From HEAR to GEAR: -->
-    <!--     Generative Evaluation of Audio Representations. Proceedings of Machine -->
-    <!--     Learning Research, (166):48–64, February 2023. -->
-    <!-- </p> -->
+        <h3>Disentanglement</h3>
 
-    <p>
-      [PGS+ 11] Geoffroy Peeters, Bruno L. Giordano, Patrick Susini, Nicolas
-      Misdariis, and Stephen McAdams. The Timbre Toolbox: Extracting Audio
-      Descriptors from Musical Signals. The Journal of the Acoustical Society of
-      America, 130(5):2902– 2916, Nov 2011.
-    </p>
-    <p></p>
-  </body>
+        <p>
+            Following the preliminary experiments which confirm that conditioning DDSP on
+            spectrotemporal audio descriptors augments the timbral control of the
+            resulting output, we now turn to the evaluation of our disentanglement method
+            which involves finding a set of disentangled spectrotemporal parameters that
+            are most correlated with the mesostructural properties of the dataset. See
+            section 6.3.3 of the thesis for details on disentangled parameters.
+            <!-- This -->
+            <!-- approach defines a novel method that follows [LYY23] by estimating the best -->
+            <!-- suited spectrotemporal parameters for a dataset of sounds by measuring -->
+            <!-- parametric correlation against a low-dimensional projection of their -->
+            <!-- scattering representations. Instead of relying on prior information about the -->
+            <!-- sound sources, or simply measuring which parameters demonstrate the maximum -->
+            <!-- amount of variance across the dataset, this approach bridges a gap between -->
+            <!-- parametric evolution on the microscale—related to acousmatic morphology—and -->
+            <!-- parametric evolution on the mesoscale—emphasizing acousmatic typology. In this -->
+            <!-- regard, the proposed method focuses on reinforcing the generation of sounds -->
+            <!-- that mesostructurally resemble sounds in the dataset. -->
+        </p>
+
+        <!-- <h4>Top Ranked Correlated Features (Table 6.1)</h4> -->
+
+        <!-- <table border="1"> -->
+        <!--     <thead> -->
+        <!--         <tr style="background-color: #cccccc"> -->
+        <!--             <th>Dimension</th> -->
+        <!--             <th>1st</th> -->
+        <!--             <th>2nd</th> -->
+        <!--             <th>3rd</th> -->
+        <!--         </tr> -->
+        <!--     </thead> -->
+        <!--     <tbody> -->
+        <!--         <tr> -->
+        <!--             <td colspan="4"><strong>Type A [Spring Coil]</strong></td> -->
+        <!--         </tr> -->
+        <!--         <tr> -->
+        <!--             <td> -->
+        <!--                 <strong>W<sub>1</sub></strong> -->
+        <!--             </td> -->
+        <!--             <td>Slope</td> -->
+        <!--             <td>Centroid</td> -->
+        <!--             <td>Harmonic Spectral Deviation</td> -->
+        <!--         </tr> -->
+        <!--         <tr> -->
+        <!--             <td> -->
+        <!--                 <strong>W<sub>2</sub></strong> -->
+        <!--             </td> -->
+        <!--             <td>Inharmonicity</td> -->
+        <!--             <td>Harmonic Energy</td> -->
+        <!--             <td>Noisiness</td> -->
+        <!--         </tr> -->
+        <!--         <tr> -->
+        <!--             <td> -->
+        <!--                 <strong>W<sub>3</sub></strong> -->
+        <!--             </td> -->
+        <!--             <td>Noise Energy</td> -->
+        <!--             <td>Decrease</td> -->
+        <!--             <td>Crest</td> -->
+        <!--         </tr> -->
+        <!--         <tr> -->
+        <!--             <td colspan="4"><strong>Type B [Threaded Rod]</strong></td> -->
+        <!--         </tr> -->
+        <!--         <tr> -->
+        <!--             <td> -->
+        <!--                 <strong>W<sub>1</sub></strong> -->
+        <!--             </td> -->
+        <!--             <td>Decrease</td> -->
+        <!--             <td>Crest</td> -->
+        <!--             <td>Noisiness</td> -->
+        <!--         </tr> -->
+        <!--         <tr> -->
+        <!--             <td> -->
+        <!--                 <strong>W<sub>2</sub></strong> -->
+        <!--             </td> -->
+        <!--             <td>Slope</td> -->
+        <!--             <td>Centroid</td> -->
+        <!--             <td>Flatness</td> -->
+        <!--         </tr> -->
+        <!--         <tr> -->
+        <!--             <td> -->
+        <!--                 <strong>W<sub>3</sub></strong> -->
+        <!--             </td> -->
+        <!--             <td>Inharmonicity</td> -->
+        <!--             <td>Odd/Even Ratio</td> -->
+        <!--             <td>Centroid</td> -->
+        <!--         </tr> -->
+        <!--         <tr> -->
+        <!--             <td colspan="4"><strong>Type C [Styrofoam]</strong></td> -->
+        <!--         </tr> -->
+        <!--         <tr> -->
+        <!--             <td> -->
+        <!--                 <strong>W<sub>1</sub></strong> -->
+        <!--             </td> -->
+        <!--             <td>Harmonic Spectral Deviation</td> -->
+        <!--             <td>Inharmonicity</td> -->
+        <!--             <td>Decrease</td> -->
+        <!--         </tr> -->
+        <!--         <tr> -->
+        <!--             <td> -->
+        <!--                 <strong>W<sub>2</sub></strong> -->
+        <!--             </td> -->
+        <!--             <td>Flatness</td> -->
+        <!--             <td>Noise Energy</td> -->
+        <!--             <td>Slope</td> -->
+        <!--         </tr> -->
+        <!--         <tr> -->
+        <!--             <td> -->
+        <!--                 <strong>W<sub>3</sub></strong> -->
+        <!--             </td> -->
+        <!--             <td>Noisiness</td> -->
+        <!--             <td>Harmonic Energy</td> -->
+        <!--             <td>Crest</td> -->
+        <!--         </tr> -->
+        <!--     </tbody> -->
+        <!-- </table> -->
+
+        <!-- <h4>Principal Components Explained Variance (Table 6.2)</h4> -->
+
+        <!-- <table border="1"> -->
+        <!--     <thead> -->
+        <!--         <tr style="background-color: #cccccc"> -->
+        <!--             <th>Type A [Spring Coil]</th> -->
+        <!--             <th>Explained Variance</th> -->
+        <!--         </tr> -->
+        <!--     </thead> -->
+        <!--     <tbody> -->
+        <!--         <tr> -->
+        <!--             <td>Centroid</td> -->
+        <!--             <td>0.517</td> -->
+        <!--         </tr> -->
+        <!--         <tr> -->
+        <!--             <td><strong>Slope</strong></td> -->
+        <!--             <td>0.327</td> -->
+        <!--         </tr> -->
+        <!--         <tr> -->
+        <!--             <td>Crest</td> -->
+        <!--             <td>0.074</td> -->
+        <!--         </tr> -->
+        <!--     </tbody> -->
+        <!-- </table> -->
+
+        <!-- <table border="1"> -->
+        <!--     <thead> -->
+        <!--         <tr style="background-color: #cccccc"> -->
+        <!--             <th>Type B [Threaded Rod]</th> -->
+        <!--             <th>Explained Variance</th> -->
+        <!--         </tr> -->
+        <!--     </thead> -->
+        <!--     <tbody> -->
+        <!--         <tr> -->
+        <!--             <td>Centroid</td> -->
+        <!--             <td>0.506</td> -->
+        <!--         </tr> -->
+        <!--         <tr> -->
+        <!--             <td><strong>Slope</strong></td> -->
+        <!--             <td>0.175</td> -->
+        <!--         </tr> -->
+        <!--         <tr> -->
+        <!--             <td><strong>Decrease</strong></td> -->
+        <!--             <td>0.130</td> -->
+        <!--         </tr> -->
+        <!--     </tbody> -->
+        <!-- </table> -->
+
+        <!-- <table border="1"> -->
+        <!--     <thead> -->
+        <!--         <tr style="background-color: #cccccc"> -->
+        <!--             <th>Type C [Styrofoam]</th> -->
+        <!--             <th>Explained Variance</th> -->
+        <!--         </tr> -->
+        <!--     </thead> -->
+        <!--     <tbody> -->
+        <!--         <tr> -->
+        <!--             <td>Slope</td> -->
+        <!--             <td>0.526</td> -->
+        <!--         </tr> -->
+        <!--         <tr> -->
+        <!--             <td>Decrease</td> -->
+        <!--             <td>0.264</td> -->
+        <!--         </tr> -->
+        <!--         <tr> -->
+        <!--             <td><strong>Flatness</strong></td> -->
+        <!--             <td>0.089</td> -->
+        <!--         </tr> -->
+        <!--     </tbody> -->
+        <!-- </table> -->
+
+        <!-- <p> -->
+        <!--     Qualitatively, we can analyze these results in accordance to the timbral -->
+        <!--     features of each sound type. Type A contains potentially the most diverse -->
+        <!--     range of features, in which the spring coil not only produces resonant sounds -->
+        <!--     that are both low and high in frequency, but also produces a fair amount of -->
+        <!--     distinct stochastic components. The disentanglement method's selection of -->
+        <!--     slope, inharmonicity, and noise energy seems to capture this diverse range of -->
+        <!--     features, as this collection of descriptors contains features that deal with -->
+        <!--     complex harmonic structure (inharmonicity), stochasticity (noise energy), and -->
+        <!--     control of the spectrum based on statistical distribution of energy (slope). -->
+        <!-- </p> -->
+
+        <!-- <p> -->
+        <!--     Type B contains very sharp and noisy transients that take up most of the -->
+        <!--     frequency spectrum below 16kHz due to the threaded rod scraping up against the -->
+        <!--     rim of the floor tom. As a result of these sharp transients, the resonant -->
+        <!--     modes of the tom are also apparent in the signal. For this type of playing -->
+        <!--     technique, the model's selection of both slope and decrease may reflect the -->
+        <!--     need for a refined slope metric in both the high and low frequency ranges of -->
+        <!--     the spectrum. This could be due to the signal's combination of high-frequency -->
+        <!--     transients caused by the periodic scraping of the threaded rod on the tom rim, -->
+        <!--     and low-frequency resonance that results from this action in its periodic -->
+        <!--     exciting and damping of the drum membrane. Inharmonicity then allows the model -->
+        <!--     to capture the resonant components produced by the threaded rod. -->
+        <!-- </p> -->
+
+        <!-- <p> -->
+        <!--     Finally, Type C contains potentially the most stochastic sounds, as the effect -->
+        <!--     of rubbing styrofoam against the drum membrane often produces a clear pitch -->
+        <!--     while still containing a substantial amount of noise. This is clearly -->
+        <!--     reflected in the model's choice of parameters, which include both flatness and -->
+        <!--     noisiness measures for distinguishing between harmonic peaks and noise energy, -->
+        <!--     while harmonic spectral deviation measures the deviation of amplitudes between -->
+        <!--     the harmonic peaks. -->
+        <!-- </p> -->
+
+        <h3>Reconstructions</h3>
+
+        <p>
+            Below are the reconstruction results of the friction percussion models trained
+            using both the DDSP model with the disentangled parameter set and from the
+            model with the baseline parameter set (i.e. the top scoring PCA parameter).
+        </p>
+
+        <p>
+            <!-- This section evaluates the performance of disentangled models by generating -->
+            <!-- sounds through extrapolation of conditional parameters and measuring their -->
+            <!-- mesostructural similarity. Each model's latent space is approximated by -->
+            <!-- generating 100 new sounds, each lasting 1 second. These sounds are plotted in -->
+            <!-- isomap space, with colors representing a specific spectrotemporal parameter, -->
+            <!-- following a procedure from [LYY23]. The hypothesis is that isomap space groups -->
+            <!-- timbrally similar sounds closer together, due to the JTFS transform's ability -->
+            <!-- to model timbral similarity. -->
+        </p>
+        <div style="text-align: center">
+            <figure>
+                <img
+                    src="friction-1.png"
+                    alt="Type A [Spring Coil]"
+                    style="width: 100%"
+                />
+                <figcaption>Type A [Spring Coil]</figcaption>
+            </figure>
+            <br />
+            <figure>
+                <img
+                    src="friction-2.png"
+                    alt="Type B [Threaded Rod]"
+                    style="width: 100%"
+                />
+                <figcaption>Type B [Threaded Rod]</figcaption>
+            </figure>
+            <br />
+            <figure>
+                <img src="friction-3.png" alt="Type C [Styrofoam]" style="width: 100%" />
+                <figcaption>Type C [Styrofoam]</figcaption>
+            </figure>
+            <figcaption>
+                <p>
+                    <i
+                        >Manifolds from each disentangled model generated by applying a
+                        convex hull to the outer-most sounds in the isomap JTFS space.
+                        Color hues depict the mean value of the spectrotemporal parameter
+                        associated with each plot.</i
+                    >
+                </p>
+            </figcaption>
+        </div>
+
+        <!-- <table style="width: 100%; border: 1px solid black; border-collapse: collapse"> -->
+        <!--     <thead style="background-color: #d3d3d3"> -->
+        <!--         <tr> -->
+        <!--             <th></th> -->
+        <!--             <th>Sum of Pairwise Distances (L1)</th> -->
+        <!--             <th>Sum of Pairwise Distances (L2)</th> -->
+        <!--             <th>Convex Hull Volume</th> -->
+        <!--         </tr> -->
+        <!--     </thead> -->
+        <!--     <tbody> -->
+        <!--         <tr> -->
+        <!--             <td>Baseline</td> -->
+        <!--             <td>0.4413</td> -->
+        <!--             <td>0.3286</td> -->
+        <!--             <td>0.0463</td> -->
+        <!--         </tr> -->
+        <!--         <tr> -->
+        <!--             <td>Disentangled</td> -->
+        <!--             <td><b>0.2525</b></td> -->
+        <!--             <td><b>0.1991</b></td> -->
+        <!--             <td><b>0.0341</b></td> -->
+        <!--         </tr> -->
+        <!--     </tbody> -->
+        <!-- </table> -->
+
+        <!-- <table -->
+        <!--     style=" -->
+        <!--         width: 100%; -->
+        <!--         border: 1px solid black; -->
+        <!--         border-collapse: collapse; -->
+        <!--         margin-top: 20px; -->
+        <!--     " -->
+        <!-- > -->
+        <!--     <thead style="background-color: #d3d3d3"> -->
+        <!--         <tr> -->
+        <!--             <th></th> -->
+        <!--             <th>Sum of Pairwise Distances (L1)</th> -->
+        <!--             <th>Sum of Pairwise Distances (L2)</th> -->
+        <!--             <th>Convex Hull Volume</th> -->
+        <!--         </tr> -->
+        <!--     </thead> -->
+        <!--     <tbody> -->
+        <!--         <tr> -->
+        <!--             <td>Baseline</td> -->
+        <!--             <td>0.3134</td> -->
+        <!--             <td>0.2568</td> -->
+        <!--             <td>0.0167</td> -->
+        <!--         </tr> -->
+        <!--         <tr> -->
+        <!--             <td>Disentangled</td> -->
+        <!--             <td><b>0.1245</b></td> -->
+        <!--             <td><b>0.0900</b></td> -->
+        <!--             <td><b>0.0162</b></td> -->
+        <!--         </tr> -->
+        <!--     </tbody> -->
+        <!-- </table> -->
+
+        <!-- <table -->
+        <!--     style=" -->
+        <!--         width: 100%; -->
+        <!--         border: 1px solid black; -->
+        <!--         border-collapse: collapse; -->
+        <!--         margin-top: 20px; -->
+        <!--     " -->
+        <!-- > -->
+        <!--     <thead style="background-color: #d3d3d3"> -->
+        <!--         <tr> -->
+        <!--             <th></th> -->
+        <!--             <th>Sum of Pairwise Distances (L1)</th> -->
+        <!--             <th>Sum of Pairwise Distances (L2)</th> -->
+        <!--             <th>Convex Hull Volume</th> -->
+        <!--         </tr> -->
+        <!--     </thead> -->
+        <!--     <tbody> -->
+        <!--         <tr> -->
+        <!--             <td>Baseline</td> -->
+        <!--             <td>0.4937</td> -->
+        <!--             <td>0.3541</td> -->
+        <!--             <td><b>0.0675</b></td> -->
+        <!--         </tr> -->
+        <!--         <tr> -->
+        <!--             <td>Disentangled</td> -->
+        <!--             <td><b>0.4479</b></td> -->
+        <!--             <td><b>0.3170</b></td> -->
+        <!--             <td>0.0786</td> -->
+        <!--         </tr> -->
+        <!--     </tbody> -->
+        <!-- </table> -->
+        <!-- <p> -->
+        <!--     The generated sound manifolds for each model are represented by convex hulls -->
+        <!--     around the outermost points in the isomap space, creating hypothetical sound -->
+        <!--     objects. Visual analysis shows that Type A and Type B models exhibit a strong -->
+        <!--     correlation between sound parameters and isomap space dimensions, suggesting -->
+        <!--     that these models capture both microstructural and mesostructural sound -->
+        <!--     properties. However, Type C shows less correlation, potentially due to the -->
+        <!--     noisy nature of the styrofoam sounds. -->
+        <!-- </p> -->
+
+        <!-- <p> -->
+        <!--     Geometrically, smaller manifold volumes suggest more timbrally homogeneous -->
+        <!--     spaces, with more compact clusters representing smoother, more continuous -->
+        <!--     latent spaces. Disentangled models show more compact clusters than baseline -->
+        <!--     models, which condition only on loudness and the top-scoring parameter from -->
+        <!--     PCA. Quantitative measures of compactness using L1 and L2 pairwise distances -->
+        <!--     and convex hull volumes also confirm this compactness for Type A and Type B -->
+        <!--     models, while Type C deviates. -->
+        <!-- </p> -->
+
+        <div class="grid grid-3x3">
+            <div>
+                Type A (Original Recording)
+                <audio controls>
+                    <source
+                        src="https://storage.googleapis.com/acousmatic-typomorphology-examples/b-original.mp3"
+                        type="audio/mpeg"
+                    />
+                </audio>
+            </div>
+            <div>
+                Baseline (DDSP Reconstruction)
+                <audio controls>
+                    <source
+                        src="https://storage.googleapis.com/acousmatic-typomorphology-examples/b-baseline-output.mp3"
+                        type="audio/mpeg"
+                    />
+                </audio>
+            </div>
+            <div>
+                Disentangled (DDSP Reconstruction)
+                <audio controls>
+                    <source
+                        src="https://storage.googleapis.com/acousmatic-typomorphology-examples/b-output.mp3"
+                        type="audio/mpeg"
+                    />
+                </audio>
+            </div>
+        </div>
+        <div class="grid grid-3x3">
+            <div>
+                Type B (Original Recording)
+                <audio controls>
+                    <source
+                        src="https://storage.googleapis.com/acousmatic-typomorphology-examples/d-original.mp3"
+                        type="audio/mpeg"
+                    />
+                </audio>
+            </div>
+            <div>
+                Baseline (DDSP Reconstruction)
+                <audio controls>
+                    <source
+                        src="https://storage.googleapis.com/acousmatic-typomorphology-examples/d-baseline-output.mp3"
+                        type="audio/mpeg"
+                    />
+                </audio>
+            </div>
+            <div>
+                Disentangled (DDSP Reconstruction)
+                <audio controls>
+                    <source
+                        src="https://storage.googleapis.com/acousmatic-typomorphology-examples/d-output.mp3"
+                        type="audio/mpeg"
+                    />
+                </audio>
+            </div>
+        </div>
+
+        <div class="grid grid-3x3">
+            <div>
+                Type C (Original Recording)
+                <audio controls>
+                    <source
+                        src="https://storage.googleapis.com/acousmatic-typomorphology-examples/e-original.mp3"
+                        type="audio/mpeg"
+                    />
+                </audio>
+            </div>
+            <div>
+                Baseline (DDSP Reconstruction)
+                <audio controls>
+                    <source
+                        src="https://storage.googleapis.com/acousmatic-typomorphology-examples/e-baseline-output.mp3"
+                        type="audio/mpeg"
+                    />
+                </audio>
+            </div>
+            <div>
+                Disentangled (DDSP Reconstruction)
+                <audio controls>
+                    <source
+                        src="https://storage.googleapis.com/acousmatic-typomorphology-examples/e-output.mp3"
+                        type="audio/mpeg"
+                    />
+                </audio>
+            </div>
+        </div>
+
+        <h2>Typomorphological Experiments</h2>
+
+        <p>
+            Finally, we experiment with the spectrotemporal audio descriptors on
+            real-world sounds by implementing a method for typomorphological synthesis.
+            <!-- The driving idea here is to "morph" between two different sound types by -->
+            <!-- training a single DDSP model on the union of two datasets that each reflect -->
+            <!-- the sound types in question. When conditioned on a sufficient number of -->
+            <!-- spectrotemporal parameters, a sound from the initial sound type would be able -->
+            <!-- to seamlessly morph into a sound from the terminal sound type over a certain -->
+            <!-- number of iterations. This can be represented using a series of points in the -->
+            <!-- scattering isomap, which form a pathway connecting the iterated sounds -->
+            <!-- extrapolated from morphing between the initial and terminal sound types. The -->
+            <!-- trajectory thus outlines a continuous affine group action on the control -->
+            <!-- parameter vector \(\rho(\mathfrak{a})\mathbf{V}\) which morphs the -->
+            <!-- microstructural parameters of the initial sound into those of the terminal -->
+            <!-- sound while retaining a suitable mesostructural topology in the scattering -->
+            <!-- domain. We implement the morphology of control parameters from the initial -->
+            <!-- sound to the terminal sound using a simple linear interpolation such that the -->
+            <!-- intial sound’s control matrix \(\mathbf{V}_{1}\) morphs into the terminal -->
+            <!-- sound’s control matrix \(\mathbf{V}_{2}\). The typomorphological synthesizer -->
+            <!-- was trained on two different dataset pairs. The first pair consisted of -->
+            <!-- environemntal sounds: field recordings of rainfall and recordings of applause. -->
+            <!-- The second pair of datasets consisted of a collection of dog barks along with -->
+            <!-- a collection of snare drum strikes. Both datasets were compiled using creative -->
+            <!-- commons (CC) licensed sounds available on -->
+            <!-- <a href="https://freesound.org/">freesound.org</a>. -->
+        </p>
+
+        <!-- <p> -->
+        <!--     The reconstructions are somewhat perceptually convincing even though they -->
+        <!--     produce some ambiguous timbral qualities. For instance, there is a general -->
+        <!--     increase in harmonic energy in the dog bark → snare drum model, even though -->
+        <!--     the dog bark reconstruction more acurately takes after the original recording -->
+        <!--     in its spectral envelope. In the environemnental model, we hear that the -->
+        <!--     rainfall resembles its original recording much more accurately than the -->
+        <!--     applause, which ends up sounding sharper and contains higher-frequency -->
+        <!--     transients. Upon listening to the morphological trajectories and observing the -->
+        <!--     scattering plots, we might conclude that these models provide interesting -->
+        <!--     situations in which the acousmatic ambivalence between two sound types is -->
+        <!--     exploited, in that the resulting models often favor the spectral -->
+        <!--     characteristics of one sound type at the expense of the other. While a more -->
+        <!--     accurate overall reconstruction might be achieved using a more intricate DDSP -->
+        <!--     synthesis operation, this ambivalence also has the potential to be creatively -->
+        <!--     exploited in an acousmatic compositional setting. -->
+        <!-- </p> -->
+
+        <div style="text-align: center">
+            <figure>
+                <img
+                    src="morphology.png"
+                    alt="Plots depicting typomorphology with JTFS coordinates"
+                    style="width: 100%"
+                />
+                <figcaption>
+                    <i
+                        >Typomorphological neural audio synthesis performed on two
+                        different pairs of sound types</i
+                    >
+                </figcaption>
+            </figure>
+        </div>
+        <style>
+            .table-wrapper {
+                display: flex;
+                justify-content: center; /* Adds space between the two tables */
+                gap: 20%; /* Optional: add a gap between the tables */
+            }
+            .table-container {
+                width: 35%; /* Adjust the width of each table container */
+            }
+        </style>
+
+        <div class="table-wrapper">
+            <div class="table-container">
+                <h3>Dog Barking &rarr; Snare Drum</h3>
+                <table border="1">
+                    <tr>
+                        <td>
+                            Dog Barking (Original Recording)
+                            <audio controls>
+                                <source
+                                    src="https://storage.googleapis.com/acousmatic-typomorphology-examples/og_dog.wav"
+                                    type="audio/mpeg"
+                                />
+                                Your browser does not support the audio element.
+                            </audio>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Dog Barking (DDSP Reconstruction)
+                            <audio controls>
+                                <source
+                                    src="https://storage.googleapis.com/acousmatic-typomorphology-examples/dog_reconstruction.wav"
+                                    type="audio/mpeg"
+                                />
+                                Your browser does not support the audio element.
+                            </audio>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Snare Drum (Original Recording)
+                            <audio controls>
+                                <source
+                                    src="https://storage.googleapis.com/acousmatic-typomorphology-examples/og_snare.wav"
+                                    type="audio/mpeg"
+                                />
+                                Your browser does not support the audio element.
+                            </audio>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Snare Drum (DDSP Reconstruction)
+                            <audio controls>
+                                <source
+                                    src="https://storage.googleapis.com/acousmatic-typomorphology-examples/snare_reconstruction.wav"
+                                    type="audio/mpeg"
+                                />
+                                Your browser does not support the audio element.
+                            </audio>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Dog &rarr; Snare
+                            <audio controls>
+                                <source
+                                    src="https://storage.googleapis.com/acousmatic-typomorphology-examples/dog_to_snare.wav"
+                                    type="audio/mpeg"
+                                />
+                                Your browser does not support the audio element.
+                            </audio>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="table-container">
+                <h3>Applause &rarr; Rainfall</h3>
+                <table border="1">
+                    <tr>
+                        <td>
+                            Applause (Original Recording)
+                            <audio controls>
+                                <source
+                                    src="https://storage.googleapis.com/acousmatic-typomorphology-examples/og_clap.wav"
+                                    type="audio/mpeg"
+                                />
+                                Your browser does not support the audio element.
+                            </audio>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Applause (DDSP Reconstruction)
+                            <audio controls>
+                                <source
+                                    src="https://storage.googleapis.com/acousmatic-typomorphology-examples/clap_reconstructed.wav"
+                                    type="audio/mpeg"
+                                />
+                                Your browser does not support the audio element.
+                            </audio>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Rainfall (Original Recording)
+                            <audio controls>
+                                <source
+                                    src="https://storage.googleapis.com/acousmatic-typomorphology-examples/og_rain.wav"
+                                    type="audio/mpeg"
+                                />
+                                Your browser does not support the audio element.
+                            </audio>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Rainfall (DDSP Reconstruction)
+                            <audio controls>
+                                <source
+                                    src="https://storage.googleapis.com/acousmatic-typomorphology-examples/rain_reconstructed.wav"
+                                    type="audio/mpeg"
+                                />
+                                Your browser does not support the audio element.
+                            </audio>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Applause &rarr; Rainfall
+                            <audio controls>
+                                <source
+                                    src="https://storage.googleapis.com/acousmatic-typomorphology-examples/clap_to_rain.wav"
+                                    type="audio/mpeg"
+                                />
+                                Your browser does not support the audio element.
+                            </audio>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- <h2>Acknowledgements</h2> -->
+        <!-- Please consider citing this thesis if used in your work -->
+        <!-- <pre> -->
+        <!-- <code> -->
+        <!-- @mastersthesis{Ardito2024, -->
+        <!--   author       = {Max Ardito}, -->
+        <!--   title        = {{An Acousmatic Approach to Neural Audio Synthesis}}, -->
+        <!--   school       = {McGill University}, -->
+        <!--   year         = {2024}, -->
+        <!--   address      = {Montréal, Quebec, Canada}, -->
+        <!--   type         = {Master's Thesis}, -->
+        <!--   url          = {TODO: URL of the Thesis (if available)}, -->
+        <!-- } -->
+        <!-- </code> -->
+        <!-- </pre> -->
+
+        <h2>Citations</h2>
+        <p>
+            [BRC24] Adrián Barahona-Ríos and Tom Collins. NoiseBandNet: Controllable Time-
+            Varying Neural Synthesis of Sound Effects Using Filterbanks. IEEE/ACM
+            Transactions on Audio, Speech, and Language Processing, 32:1573–1585, 2024.
+        </p>
+        <!-- <p> -->
+        <!--     [HAP+ 18] Irina Higgins, David Amos, David Pfau, Sebastien Racaniere, Loic -->
+        <!--     Matthey, Danilo Rezende, and Alexander Lerchner. Towards a Definition of -->
+        <!--     Disentangled Representations, 2018. https://arxiv.org/abs/1812.02230. -->
+        <!-- </p> -->
+
+        <!-- <p> -->
+        <!--     [LEHR+ 21] Vincent Lostanlen, Chady El-Hajj, Matthieu Rossignol, Gérard Lafay, -->
+        <!--     Joakim Andén, and Mathieu Lagrange. Time-Frequency Scattering Accurately -->
+        <!--     Models Auditory Similarities Between Instrumental Playing Techniques. EURASIP -->
+        <!--     Journal on Audio, Speech, and Music Processing, 2021(1):3, 2021. Epub 2021 Jan -->
+        <!--     11. -->
+        <!-- </p> -->
+
+        <!-- <p> -->
+        <!--     [LYY23] Vincent Lostanlen, Lingyao Yan, and Xianyi Yang. From HEAR to GEAR: -->
+        <!--     Generative Evaluation of Audio Representations. Proceedings of Machine -->
+        <!--     Learning Research, (166):48–64, February 2023. -->
+        <!-- </p> -->
+
+        <p>
+            [PGS+ 11] Geoffroy Peeters, Bruno L. Giordano, Patrick Susini, Nicolas
+            Misdariis, and Stephen McAdams. The Timbre Toolbox: Extracting Audio
+            Descriptors from Musical Signals. The Journal of the Acoustical Society of
+            America, 130(5):2902– 2916, Nov 2011.
+        </p>
+        <p></p>
+    </body>
 </html>
